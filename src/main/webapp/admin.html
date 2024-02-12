@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <title>Imaginarium - Admin</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Imaginarium</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" type="text/css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="container" style="background-image: linear-gradient(to left bottom, rgba(189, 195, 199, .75), rgba(44, 62, 80, .75));">
+	
+		<div class="py-3 text-center" style="background-size: 100%;">
+			<div class="container">
+				<div class="col" >
+					<div class="mx-auto p-4 col-md-5">
+						<h1 class="mb-4">Admin log in</h1>
+						<form action="adminAuthServlet" method="post">
+							<div class="form-group"> <input type="email" class="form-control" name="email" placeholder="Your Email"> </div>
+							<div class="form-group"> <input type="password" class="form-control" name="pwd" placeholder="Password"> </div>
+							<button type="submit" class="btn btn-outline-primary btn-block">Log in<br></button>
+						</form><br>
+						<h2 class="mb-4"><a class="btn btn-link btn-lg" href="index.html">Customer log in</a></h2>
+                    </div>
+                    <div id="errorContainer" class="text-center"></div>
+                </div>
+            </div>
+        </div>
+
+     <script>
+        // incorrectLogin z query parametra
+        const urlParams = new URLSearchParams(window.location.search);
+        const incorrectLogin = urlParams.get('incorrectLogin');
+
+        // ak je incorrectLogin v query true
+        if (incorrectLogin) {
+            const errorMessage = document.createElement('p');
+            errorMessage.style.color = 'red';
+            errorMessage.textContent = 'Incorrect login information. Please try again.';
+            
+            // vypisanie spravy pod formular
+            const errorContainer = document.getElementById('errorContainer');
+            errorContainer.appendChild(errorMessage);
+        }
+     </script>
+    
+</body>
+</html>
