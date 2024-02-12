@@ -4,7 +4,7 @@ Welcome to the Imaginarium E-shop!
 
 ## Features
 
-This README provides details about the project:
+This README provides details about the project
 
 ### Technologies Used
 
