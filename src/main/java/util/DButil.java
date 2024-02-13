@@ -10,7 +10,6 @@ public class DButil {
 	private static final String url = "jdbc:mysql://localhost/eshop";
 	private static final String username = "root";
 	private static final String pswd = "";
-	private static Guard g;
 	private static String error_message = "";
 	
 	public static String getErrorMessage() {
@@ -25,7 +24,7 @@ public class DButil {
 				Class.forName("com.mysql.cj.jdbc.Driver");
 				c = DriverManager.getConnection(url, username, pswd);
 				session.setAttribute("connection", c);
-				g = new Guard(c);
+				Guard g = new Guard(c);
 			}
 			return c;
 		} catch (Exception e) { 

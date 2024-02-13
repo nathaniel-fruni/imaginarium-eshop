@@ -8,8 +8,11 @@ import jakarta.servlet.http.HttpSession;
 import util.DButil;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.SQLException;
+import org.mindrot.jbcrypt.BCrypt;
+
 
 public class adminAuthServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
@@ -50,36 +53,42 @@ public class adminAuthServlet extends HttpServlet {
 	}
 	
 	protected boolean verificationOk(PrintWriter out, HttpServletRequest request) {
-		try {
-			String email = request.getParameter("email");
-			String pwd = request.getParameter("pwd");
-			Statement stmt = DButil.getConnection(request).createStatement();
-			String sql = "SELECT MAX(id) AS iid, COUNT(id) AS pocet FROM users WHERE email = '" + email + "' AND passwd = '" + pwd + "'";
-			ResultSet rs = stmt.executeQuery(sql);
-			rs.next();
-			
-			HttpSession session = request.getSession();
-			if (rs.getInt("pocet") == 1) {
-				sql = "SELECT id, email, name, surname, role FROM users WHERE id = '" + rs.getInt("iid") + "'";
-				rs = stmt.executeQuery(sql);
-				rs.next();
-				session.setAttribute("ID", rs.getInt("id"));
-				session.setAttribute("email", rs.getString("email"));
-				session.setAttribute("name", rs.getString("name"));
-				session.setAttribute("surname", rs.getString("surname"));
-				session.setAttribute("role", rs.getString("role"));
-				if (((String) session.getAttribute("role")).equals("admin")) {
-					return true;
-				}
-			} else {
-				session.invalidate();
-			}
-			
-			rs.close();
-			stmt.close();
-		} catch (Exception e) { out.println(e); }
-		return false;
-	}
+        try {
+            String email = request.getParameter("email");
+            String inputPassword = request.getParameter("pwd");
+
+            String sql = "SELECT id, email, passwd, name, surname, role FROM users WHERE email = ?";
+            try (PreparedStatement preparedStatement = DButil.getConnection(request).prepareStatement(sql)) {
+                preparedStatement.setString(1, email);
+
+                try (ResultSet rs = preparedStatement.executeQuery()) {
+                    if (rs.next()) {
+                        String hashedPassword = rs.getString("passwd");
+
+                        if (BCrypt.checkpw(inputPassword, hashedPassword)) {
+                            HttpSession session = request.getSession();
+                            setSessionAttributes(session, rs);
+
+                            if (session.getAttribute("role").equals("admin")) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            out.println(e);
+        }
+        return false;
+    }
+	
+	private void setSessionAttributes(HttpSession session, ResultSet resultSet) throws SQLException {
+		session.setAttribute("ID", resultSet.getInt("id"));
+		session.setAttribute("email", resultSet.getString("email"));
+		session.setAttribute("name", resultSet.getString("name"));
+		session.setAttribute("surname", resultSet.getString("surname"));
+		session.setAttribute("role", resultSet.getString("role"));
+    }
 	
 	public static boolean isLoggedin(HttpServletRequest request) {
 		HttpSession session = request.getSession();

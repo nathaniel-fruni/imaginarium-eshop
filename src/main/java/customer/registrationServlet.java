@@ -7,8 +7,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import util.DButil;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class registrationServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
@@ -37,7 +38,7 @@ public class registrationServlet extends HttpServlet {
 				+ "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\r\n"
 				+ "    <title>Imaginarium</title>\r\n"
 				+ "    <link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css\" type=\"text/css\">\r\n"
-				+ "    <link rel=\"stylesheet\" href=\"style.css\">\r\n"
+				+ "    <link rel=\"stylesheet\" href=\"styles/style.css\">\r\n"
 				+ "</head>\r\n"
 				+ "<body style=\"background-image: linear-gradient(to left bottom, rgba(189, 195, 199, .75), rgba(44, 62, 80, .75)); background-size: 100%;\">\r\n"
 				+ "  <div class=\"py-3 text-center\">\r\n"
@@ -69,47 +70,55 @@ public class registrationServlet extends HttpServlet {
 	}
 	
 	private void register(PrintWriter out, HttpServletRequest request) {
-		String name = request.getParameter("name");
-		String surname = request.getParameter("surname");
-		String street = request.getParameter("street");
-		String house_number = request.getParameter("house_number");
-		String zip = request.getParameter("zip");
-		String city = request.getParameter("city");
-		String email = request.getParameter("email");
-		String passwd = request.getParameter("passwd");
-		try {
-	    	Statement stmt = DButil.getConnection(request).createStatement();
-	    	String sql = "SELECT count(ID) AS pocet FROM users WHERE " 
-			          + "(email='"+email+"')";
-			ResultSet rs = stmt.executeQuery(sql);
-			rs.next();
-			int pocet = rs.getInt("pocet");
-			
-			if (pocet == 0) {
-			    sql = "INSERT INTO users (email, passwd, name, surname, address, discount, notes, role) values ("+
-			    	  "'" + email + "', "+
-			    	  "'" + passwd + "', "+
-			    	  "'" + name + "', "+
-			    	  "'" + surname + "', "+
-			    	  "'" + street + " " + house_number + ", " + zip + " " + city + "', "+
-			    	  "'0', " +
-			    	  "'', " +
-			    	  "'customer')";
-			    int ex = stmt.executeUpdate(sql);
-		    	if (ex > 0) {
-		    		out.println("<div class=\"align-items-center justify-content-center d-flex flex-column\" >\r\n"
-		    				+ "    <h3 class=\"text-center text-success\">Registration successful!</h3><a class=\"btn btn-outline-primary\" href=\"index.html\">Log in</a>\r\n"
-		    				+ "  </div>");
-		    	}
-			} else {
-				out.println("<div>\r\n"
-						+ "   <h4 class=\"text-center text-danger\">Registration unsuccessful, email already exists!</h4>\r\n"
-						+ "  </div>");
-			} 
-			
-			rs.close();
-			stmt.close();
-		  } catch (Exception e) { out.println(e.getMessage()); }
+	    String name = request.getParameter("name");
+	    String surname = request.getParameter("surname");
+	    String street = request.getParameter("street");
+	    String house_number = request.getParameter("house_number");
+	    String zip = request.getParameter("zip");
+	    String city = request.getParameter("city");
+	    String email = request.getParameter("email");
+	    String rawPassword = request.getParameter("passwd");
+
+	    String hashedPassword = BCrypt.hashpw(rawPassword, BCrypt.gensalt());
+
+	    try {
+	        String checkEmailQuery = "SELECT COUNT(ID) AS pocet FROM users WHERE email=?";
+	        String insertUserQuery = "INSERT INTO users (email, passwd, name, surname, address, discount, notes, role) VALUES (?, ?, ?, ?, ?, '0', '', 'customer')";
+
+	        try (PreparedStatement checkEmailStatement = DButil.getConnection(request).prepareStatement(checkEmailQuery)) {
+	            checkEmailStatement.setString(1, email);
+	            ResultSet rs = checkEmailStatement.executeQuery();
+	            rs.next();
+	            int pocet = rs.getInt("pocet");
+
+	            if (pocet == 0) {
+	                try (PreparedStatement insertUserStatement = DButil.getConnection(request).prepareStatement(insertUserQuery)) {
+	                    insertUserStatement.setString(1, email);
+	                    insertUserStatement.setString(2, hashedPassword);
+	                    insertUserStatement.setString(3, name);
+	                    insertUserStatement.setString(4, surname);
+	                    insertUserStatement.setString(5, street + " " + house_number + ", " + zip + " " + city);
+
+	                    int ex = insertUserStatement.executeUpdate();
+
+	                    if (ex > 0) {
+	                        out.println("<div class=\"align-items-center justify-content-center d-flex flex-column\" >\r\n"
+	                                + "    <h3 class=\"text-center text-success\">Registration successful!</h3><a class=\"btn btn-outline-primary\" href=\"index.html\">Log in</a>\r\n"
+	                                + "  </div>");
+	                    }
+	                }
+	            } else {
+	                out.println("<div>\r\n"
+	                        + "   <h4 class=\"text-center text-danger\">Registration unsuccessful, email already exists!</h4>\r\n"
+	                        + "  </div>");
+	            }
+
+	            rs.close();
+	        }
+	    } catch (Exception e) {
+	        out.println(e.getMessage());
+	    }
 	}
+
 
 }

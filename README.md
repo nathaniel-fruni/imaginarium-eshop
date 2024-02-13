@@ -2,6 +2,10 @@
 
 Welcome to the Imaginarium E-shop!
 
+## Dependencies
+
+This project uses the BCrypt library for secure password hashing. You can download the BCrypt JAR file from [BCrypt Maven Repository](https://mvnrepository.com/artifact/org.mindrot/jbcrypt).
+
 ## Features
 
 This README provides details about the project:
