@@ -8,8 +8,9 @@ import jakarta.servlet.http.HttpSession;
 import util.DButil;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 
 public class mainServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
@@ -26,19 +27,16 @@ public class mainServlet extends HttpServlet {
 		response.setContentType("text/html;charset=UTF-8");
 		PrintWriter out = response.getWriter();
 		
-		// kontrola, ci je pouzivatel prihlaseny
 		if (!customerAuthServlet.isLoggedin(request)) response.sendRedirect("index.html");
 
 		String operation = request.getParameter("operation");
 		if (operation == null) { response.sendRedirect("index.html"); return;}
 		
 		if (operation.equals("logout")) {
-			response.sendRedirect("index.html");
-			logout(request);
+			logout(request, response);
 			return;
 		}
 		
-		// vygenerovanie obsahu
 		createHtmlBegining(out, request);
 	    createHeader(out, request);
 	    if (operation.equals("showBook")) { showBook(out, request); }
@@ -146,36 +144,37 @@ public class mainServlet extends HttpServlet {
 				+ "    </div>\r\n"
 				+ "    <div class=\"container\">\r\n"
 				+ "      <div class=\"row\">");
-		// vypis knih
+		// books
 		try {
-			Statement stmt = DButil.getConnection(request).createStatement();
-		    ResultSet rs = stmt.executeQuery("SELECT products.id AS id, products.book_name AS book_name, products.author_name AS author_name, "
+			String sql = "SELECT products.id AS id, products.book_name AS book_name, products.author_name AS author_name, "
 		    		+ "products.long_description AS long_description, products.short_description AS short_description, products.price AS price, "
 		    		+ "products.picture_name AS picture_name, stock.quantity AS quantity FROM `products` "
 		    		+ "INNER JOIN stock ON (products.id=stock.product_id) "
-		    		+ "WHERE quantity > 0");
-		    while (rs.next()) {
-		    	price = rs.getDouble("price")*(100-discount)/100;
-		    	double roundedPrice = Math.round(price * 100.0) / 100.0;
-		        out.println("<div class=\"col-md-6 p-2 col-lg-3\">\r\n"
-		        		+ "          <div class=\"card bg-dark text-center text-light rounded-0\">\r\n"
-		        		+ "            <div class=\"card-body p-3 d-flex flex-column justify-content-between align-items-center\" style=\"background-image: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.8)); height: 450px;\">\r\n"
-		        		+ "              <h5>"+rs.getString("author_name")+"</h5>\r\n"
-		        		+ "              <img src=\"images/books/"+rs.getString("picture_name")+"\" class=\"img-fluid w-50 mb-2\" alt=\"Book Cover\" style=\"width: 100%; height: 180px; object-fit: cover;\"\">\r\n"
-		        		+ "              <h4 class=\"my-2\"> <b>"+rs.getString("book_name")+"</b> </h4\r\n"
-		        		+ "              <p>"+rs.getString("short_description")+"</p>\r\n"
-		        		+ "              <form action='mainServlet' method='post'>\r\n"
-		        		+ "              <input type='hidden' name='id' value= '"+rs.getInt("id")+"'>\r\n"
-		        		+ "              <input type='hidden' name='price' value= '"+roundedPrice+"'>\r\n"
-		        		+ "              <input type='hidden' name='operation' value= 'showBook'>\r\n"
-		        		+ "              <input type='submit' value='Buy "+roundedPrice+"€' class='btn mt-2 btn-outline-light'>\r\n"
-		        		+ "              </form>"
-		        		+ "            </div>\r\n"
-		        		+ "          </div>\r\n"
-		        		+ "        </div>");
-		     }
-		     rs.close(); 
-		     stmt.close();
+		    		+ "WHERE quantity > 0";
+			
+			try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql);
+					ResultSet rs = stmt.executeQuery()) {
+				while (rs.next()) {
+			    	price = rs.getDouble("price")*(100-discount)/100;
+			    	double roundedPrice = Math.round(price * 100.0) / 100.0;
+			        out.println("<div class=\"col-md-6 p-2 col-lg-3\">\r\n"
+			        		+ "          <div class=\"card bg-dark text-center text-light rounded-0\">\r\n"
+			        		+ "            <div class=\"card-body p-3 d-flex flex-column justify-content-between align-items-center\" style=\"background-image: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.8)); height: 450px;\">\r\n"
+			        		+ "              <h5>"+rs.getString("author_name")+"</h5>\r\n"
+			        		+ "              <img src=\"images/books/"+rs.getString("picture_name")+"\" class=\"img-fluid w-50 mb-2\" alt=\"Book Cover\" style=\"width: 100%; height: 180px; object-fit: cover;\"\">\r\n"
+			        		+ "              <h4 class=\"my-2\"> <b>"+rs.getString("book_name")+"</b> </h4\r\n"
+			        		+ "              <p>"+rs.getString("short_description")+"</p>\r\n"
+			        		+ "              <form action='mainServlet' method='post'>\r\n"
+			        		+ "              <input type='hidden' name='id' value= '"+rs.getInt("id")+"'>\r\n"
+			        		+ "              <input type='hidden' name='price' value= '"+roundedPrice+"'>\r\n"
+			        		+ "              <input type='hidden' name='operation' value= 'showBook'>\r\n"
+			        		+ "              <input type='submit' value='Buy "+roundedPrice+"€' class='btn mt-2 btn-outline-light'>\r\n"
+			        		+ "              </form>"
+			        		+ "            </div>\r\n"
+			        		+ "          </div>\r\n"
+			        		+ "        </div>");
+			     }
+			}
 		} catch (Exception e) { out.println(e.getMessage()); }
 		
 		out.println("</div>\r\n"
@@ -185,52 +184,55 @@ public class mainServlet extends HttpServlet {
 	
 	private void showBook(PrintWriter out, HttpServletRequest request) {
 		try {
-			Statement stmt = DButil.getConnection(request).createStatement();
-		    ResultSet rs = stmt.executeQuery("SELECT * FROM products WHERE id = " + request.getParameter("id"));
-		    while(rs.next()) {
-		    	out.println("<div class=\"py-5\">\r\n"
-						+ "    <div class=\"container\">\r\n"
-						+ "      <div class=\"row\">\r\n"
-						+ "        <div class=\"col-md-4\"><img class=\"img-fluid d-block mx-auto p-3\" src=\"images/books/"+rs.getString("picture_name")+"\"></div>\r\n"
-						+ "        <div class=\"col-md-8 p-3\">\r\n"
-						+ "          <div class=\"row\">\r\n"
-						+ "            <div class=\"col-md-12\">\r\n"
-						+ "              <div class=\"row\">\r\n"
-						+ "                <h2>"+rs.getString("author_name")+"</h2>\r\n"
-						+ "              </div>\r\n"
-						+ "              <div class=\"row\">\r\n"
-						+ "                <h1>"+rs.getString("book_name")+"</h1>\r\n"
-						+ "              </div>\r\n"
-						+ "              <div class=\"row\">\r\n"
-						+ "                <p>"+rs.getString("long_description")+"</p>\r\n"
-						+ "                <p>\r\n"
-						+ "                </p>\r\n"
-						+ "                <h4>"+request.getParameter("price")+"€</h4>\r\n"
-						+ "              </div>\r\n"
-						+ "              <div class=\"row\">\r\n"
-						+ "                <form action=\"mainServlet\" method=\"post\">\r\n"
-						+ "                  <input type=\"hidden\" name=\"id\" value=\""+rs.getInt("id")+"\">\r\n"
-						+ "                  <input type=\"hidden\" name=\"price\" value=\""+request.getParameter("price")+"\">\r\n"
-						+ "                  <input type=\"hidden\" name=\"operation\" value=\"buy\">\r\n"
-						+ "                  <input type=\"submit\" value=\"Add to basket\" class=\"btn mt-2 btn-outline-light\">\r\n"
-						+ "                </form>\r\n"
-						+ "              </div>\r\n"
-						+ "            </div>\r\n"
-						+ "          </div>\r\n"
-						+ "        </div>\r\n"
-						+ "        <div class=\"pt-2 pl-3\">\r\n"
-						+ "          <div class=\"container\">\r\n"
-						+ "            <div class=\"row\">\r\n"
-						+ "              <div class=\"col-md-12\"><a class=\"btn btn-outline-light\" href=\"mainServlet?operation=1\" >Back</a></div>\r\n"
-						+ "            </div>\r\n"
-						+ "          </div>\r\n"
-						+ "        </div>"
-						+ "      </div>\r\n"
-						+ "    </div>\r\n"
-						+ "  </div>");
-		    }
-			rs.close();
-			stmt.close();
+			String sql = "SELECT * FROM products WHERE id = ?";
+			
+			try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql)) {
+				stmt.setInt(1, Integer.parseInt(request.getParameter("id")));
+				try (ResultSet rs = stmt.executeQuery()) {
+					while(rs.next()) {
+				    	out.println("<div class=\"py-5\">\r\n"
+								+ "    <div class=\"container\">\r\n"
+								+ "      <div class=\"row\">\r\n"
+								+ "        <div class=\"col-md-4\"><img class=\"img-fluid d-block mx-auto p-3\" src=\"images/books/"+rs.getString("picture_name")+"\"></div>\r\n"
+								+ "        <div class=\"col-md-8 p-3\">\r\n"
+								+ "          <div class=\"row\">\r\n"
+								+ "            <div class=\"col-md-12\">\r\n"
+								+ "              <div class=\"row\">\r\n"
+								+ "                <h2>"+rs.getString("author_name")+"</h2>\r\n"
+								+ "              </div>\r\n"
+								+ "              <div class=\"row\">\r\n"
+								+ "                <h1>"+rs.getString("book_name")+"</h1>\r\n"
+								+ "              </div>\r\n"
+								+ "              <div class=\"row\">\r\n"
+								+ "                <p>"+rs.getString("long_description")+"</p>\r\n"
+								+ "                <p>\r\n"
+								+ "                </p>\r\n"
+								+ "                <h4>"+request.getParameter("price")+"€</h4>\r\n"
+								+ "              </div>\r\n"
+								+ "              <div class=\"row\">\r\n"
+								+ "                <form action=\"mainServlet\" method=\"post\">\r\n"
+								+ "                  <input type=\"hidden\" name=\"id\" value=\""+rs.getInt("id")+"\">\r\n"
+								+ "                  <input type=\"hidden\" name=\"price\" value=\""+request.getParameter("price")+"\">\r\n"
+								+ "                  <input type=\"hidden\" name=\"operation\" value=\"buy\">\r\n"
+								+ "                  <input type=\"submit\" value=\"Add to basket\" class=\"btn mt-2 btn-outline-light\">\r\n"
+								+ "                </form>\r\n"
+								+ "              </div>\r\n"
+								+ "            </div>\r\n"
+								+ "          </div>\r\n"
+								+ "        </div>\r\n"
+								+ "        <div class=\"pt-2 pl-3\">\r\n"
+								+ "          <div class=\"container\">\r\n"
+								+ "            <div class=\"row\">\r\n"
+								+ "              <div class=\"col-md-12\"><a class=\"btn btn-outline-light\" href=\"mainServlet?operation=1\" >Back</a></div>\r\n"
+								+ "            </div>\r\n"
+								+ "          </div>\r\n"
+								+ "        </div>"
+								+ "      </div>\r\n"
+								+ "    </div>\r\n"
+								+ "  </div>");
+				    }
+				}
+			}
 		} catch (Exception e) { out.println(e.getMessage()); }
 	}
 	
@@ -253,38 +255,52 @@ public class mainServlet extends HttpServlet {
 		Integer customer_id = getUserID(request);
 		int product_id = Integer.parseInt(request.getParameter("id"));
 	    double price = Double.parseDouble(request.getParameter("price"));
+	    Connection con = DButil.getConnection(request);
+	    
 	    
 	    try {
-	    	Statement stmt = DButil.getConnection(request).createStatement();
-			// zistim, ci uz tovar je u daného zakaznika v kosiku
-	    	String sql = "SELECT count(id) AS pocet FROM basket WHERE " 
-			          + "(customer_id='"+customer_id+"') AND (product_id ='" +product_id+"')";
-			ResultSet rs = stmt.executeQuery(sql);
-			rs.next();
-			int pocet = rs.getInt("pocet");
-			if (pocet == 0) {
-				// ak nie vlozim ho ako novy zaznam
-			    sql = "INSERT INTO basket (customer_id, product_id, price, quantity) values ("+
-			    	  "'" + customer_id + "', "+
-			    	  "'" + product_id + "', "+
-			    	  "'" + price + "', "+
-			    	  "'1') ";
-			    stmt.executeUpdate(sql);
-			} else { // ak sa tovar u zakaznika nachadza, len zvysim pocet ks
-				sql = "UPDATE basket SET quantity = quantity + 1, price ='"+price+"' WHERE "+
-			    "(customer_id='"+customer_id+"') AND (product_id ='" + product_id+"')";
-			    stmt.executeUpdate(sql);
-			} 
-			
-			rs.close();
-			stmt.close();
+	    	String checkIfExistsQuery = "SELECT count(id) AS pocet FROM basket WHERE " 
+			          + "(customer_id= ?) AND (product_id = ?)";
+	    	String insertQuery = "INSERT INTO basket (customer_id, product_id, price, quantity) values (?, ?, ?, 1)";
+	    	String updateQuery = "UPDATE basket SET price = ROUND(price + (price / quantity), 2), quantity = quantity + 1 "
+	    			+ "WHERE product_id = ? AND customer_id = ?";
+	    	
+	    	try (PreparedStatement checkIfExistsStmt = con.prepareStatement(checkIfExistsQuery);
+	             PreparedStatement insertStmt = con.prepareStatement(insertQuery);
+	             PreparedStatement updateStmt = con.prepareStatement(updateQuery)) {
+	    		
+	    		// check if the product already exists in the basket
+	    		checkIfExistsStmt.setInt(1, customer_id);
+	            checkIfExistsStmt.setInt(2, product_id);
+	            try (ResultSet rs = checkIfExistsStmt.executeQuery()) {
+	            	rs.next();
+	            	int quantity = rs.getInt("pocet");
+	            	
+	            	if (quantity == 0) {
+	                    // if the product is not in the basket, insert it
+	                    insertStmt.setInt(1, customer_id);
+	                    insertStmt.setInt(2, product_id);
+	                    insertStmt.setDouble(3, price);
+	                    insertStmt.executeUpdate();
+	                } else {
+	                    // if the product is already in the basket, update the quantity
+	                    updateStmt.setDouble(1, product_id);
+	                    updateStmt.setInt(2, customer_id);
+	                    updateStmt.executeUpdate();
+	                }
+	            }
+	    	}
 		  } catch (Exception e) {}
 	}
 	
-	public static void logout(HttpServletRequest request) {
-		HttpSession session = request.getSession();
-		session.invalidate();
+	public static void logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
+	    HttpSession session = request.getSession(false);  
+	    if (session != null) {
+	        session.invalidate();
+	    }
+	    response.sendRedirect("index.html");
 	}
+
 	
 	public static Integer getUserID(HttpServletRequest request) {
 		HttpSession session = request.getSession();

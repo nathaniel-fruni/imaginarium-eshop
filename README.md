@@ -2,6 +2,16 @@
 
 Welcome to the Imaginarium E-shop!
 
+## Sample Login Credentials
+
+### Customer Account
+- **Username:** lukas.kras@ukf.sk
+- **Password:** 123
+
+### Admin Account
+- **Username:** martin.novak@ukf.sk
+- **Password:** 789
+
 ## Dependencies
 
 This project uses the BCrypt library for secure password hashing. You can download the BCrypt JAR file from [BCrypt Maven Repository](https://mvnrepository.com/artifact/org.mindrot/jbcrypt).
@@ -49,6 +59,10 @@ The project is organized with the following structure:
 
 This website was built using [Pingendo](https://pingendo.com).
 
-### License
+### Image credits
+
+This project uses free pictures from [Pixabay](https://pixabay.com).
+
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE.md) file for details.

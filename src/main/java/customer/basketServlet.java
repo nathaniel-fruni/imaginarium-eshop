@@ -33,8 +33,7 @@ public class basketServlet extends HttpServlet {
 		if (operation == null) { response.sendRedirect("index.html"); return;}
 		
 		if (operation.equals("logout")) {
-			response.sendRedirect("index.html");
-			mainServlet.logout(request);
+			mainServlet.logout(request, response);
 			return;
 		}
 		if (operation.equals("removeItem")) { removeItem(out, request, Integer.parseInt(request.getParameter("product_id"))); }
@@ -75,13 +74,16 @@ public class basketServlet extends HttpServlet {
 				    		+ "WHERE customer_id = "+mainServlet.getUserID(request));
 				    while (rs.next()) {
 				    	out.println("<div class=\"row mb-3\">\r\n"
-				    			+ "        <div class=\"col-md-4\">\r\n"
+				    			+ "        <div class=\"col-md-3\">\r\n"
 				    			+ "          <p class=\"text-center\"><b>"+rs.getString("book_name")+" - "+rs.getString("author_name")+"</b></p><img class=\"img-fluid d-block mx-auto\" src=\"images/books/"+rs.getString("picture_name")+"\" height=\"120\" width=\"70\">\r\n"
 				    			+ "        </div>\r\n"
-				    			+ "        <div class=\"col-md-4 text-center\">\r\n"
+				    			+ "        <div class=\"col-md-3 text-center\">\r\n"
+				    			+ "          <p class=\"text-center\">Item price: "+rs.getDouble("price")/rs.getInt("quantity")+"€</p>\r\n"
+				    			+ "        </div>\r\n"
+				    			+ "        <div class=\"col-md-3 text-center\">\r\n"
 				    			+ "          <p class=\"text-center\">Price: "+rs.getDouble("price")+"€</p>\r\n"
 				    			+ "        </div>\r\n"
-				    			+ "        <div class=\"col-md-4\" >\r\n"
+				    			+ "        <div class=\"col-md-3\" >\r\n"
 				    			+ "          <div class=\"d-flex align-items-center justify-content-center\">\r\n"
 				    			+ "            <form action=\"basketServlet\" method=\"post\" class=\"text-center\">\r\n"
 				    			+ "              <input type=\"hidden\" name=\"operation\" value=\"decreaseQuantity\">\r\n"

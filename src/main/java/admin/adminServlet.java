@@ -25,24 +25,20 @@ public class adminServlet extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("text/html;charset=UTF-8");
 		PrintWriter out = response.getWriter();
-		
-		// kontrola, ci je pouzivatel prihlaseny
+
 		if (!adminAuthServlet.isLoggedin(request)) response.sendRedirect("admin.html");
-		
-		// spracovanie operacii z formularov
+
 		String operation = request.getParameter("operation");
 		if (operation == null) { response.sendRedirect("admin.html"); return;}
 		
 		if (operation.equals("logout")) {
-			response.sendRedirect("admin.html");
-			logout(request);
+			logout(request, response);
 			return;
 		}
 		if (operation.equals("changeRole")) { changeRole(request, out); }
 		if (operation.equals("changeStatus")) { changeStatus(request, out); }
 		if (operation.equals("deleteOrder")) { deleteOrder(request, out); }
-		
-		// vygenerovanie obsahu
+
 		createHtmlBegining(out, request);
 	    createHeader(out, request);
 	    if (operation.equals("showOrders")) { showOrders(out, request); }
@@ -290,9 +286,12 @@ public class adminServlet extends HttpServlet {
         } catch (Exception e) { out.println(e);}
 	}
 	
-	private void logout(HttpServletRequest request) {
-		HttpSession session = request.getSession();
-		session.invalidate();
+	public static void logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
+	    HttpSession session = request.getSession(false);  
+	    if (session != null) {
+	        session.invalidate();
+	    }
+	    response.sendRedirect("index.html");
 	}
 	
 	private Integer getUserID(HttpServletRequest request) {
