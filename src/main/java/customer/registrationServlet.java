@@ -58,6 +58,7 @@ public class registrationServlet extends HttpServlet {
 				+ "              <div class=\"form-group\"> <input type=\"password\" class=\"form-control\" name=\"passwd\" placeholder=\"Password\" required=\"\"></div>\r\n"
 				+ "              <button type=\"submit\" class=\"btn btn-outline-primary btn-block\">Register</button>\r\n"
 				+ "            </form><br>\r\n");
+		
         if(operation.equals("register")) { register(out, request); }
 		out.println("          </div>\r\n"
 				+ "        </div>\r\n"
@@ -87,33 +88,32 @@ public class registrationServlet extends HttpServlet {
 
 	        try (PreparedStatement checkEmailStatement = DButil.getConnection(request).prepareStatement(checkEmailQuery)) {
 	            checkEmailStatement.setString(1, email);
-	            ResultSet rs = checkEmailStatement.executeQuery();
-	            rs.next();
-	            int pocet = rs.getInt("pocet");
+	            try (ResultSet rs = checkEmailStatement.executeQuery()) {
+	            	rs.next();
+	            	int pocet = rs.getInt("pocet");
 
-	            if (pocet == 0) {
-	                try (PreparedStatement insertUserStatement = DButil.getConnection(request).prepareStatement(insertUserQuery)) {
-	                    insertUserStatement.setString(1, email);
-	                    insertUserStatement.setString(2, hashedPassword);
-	                    insertUserStatement.setString(3, name);
-	                    insertUserStatement.setString(4, surname);
-	                    insertUserStatement.setString(5, street + " " + house_number + ", " + zip + " " + city);
+		            if (pocet == 0) {
+		                try (PreparedStatement insertUserStatement = DButil.getConnection(request).prepareStatement(insertUserQuery)) {
+		                    insertUserStatement.setString(1, email);
+		                    insertUserStatement.setString(2, hashedPassword);
+		                    insertUserStatement.setString(3, name);
+		                    insertUserStatement.setString(4, surname);
+		                    insertUserStatement.setString(5, street + " " + house_number + ", " + zip + " " + city);
 
-	                    int ex = insertUserStatement.executeUpdate();
+		                    int ex = insertUserStatement.executeUpdate();
 
-	                    if (ex > 0) {
-	                        out.println("<div class=\"align-items-center justify-content-center d-flex flex-column\" >\r\n"
-	                                + "    <h3 class=\"text-center text-success\">Registration successful!</h3><a class=\"btn btn-outline-primary\" href=\"index.html\">Log in</a>\r\n"
-	                                + "  </div>");
-	                    }
-	                }
-	            } else {
-	                out.println("<div>\r\n"
-	                        + "   <h4 class=\"text-center text-danger\">Registration unsuccessful, email already exists!</h4>\r\n"
-	                        + "  </div>");
+		                    if (ex > 0) {
+		                        out.println("<div class=\"align-items-center justify-content-center d-flex flex-column\" >\r\n"
+		                                + "    <h3 class=\"text-center text-success\">Registration successful!</h3><a class=\"btn btn-outline-primary\" href=\"index.html\">Log in</a>\r\n"
+		                                + "  </div>");
+		                    }
+		                }
+		            } else {
+		                out.println("<div>\r\n"
+		                        + "   <h4 class=\"text-center text-danger\">Registration unsuccessful, email already exists!</h4>\r\n"
+		                        + "  </div>");
+		            }
 	            }
-
-	            rs.close();
 	        }
 	    } catch (Exception e) {
 	    	e.printStackTrace();

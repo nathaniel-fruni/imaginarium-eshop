@@ -41,8 +41,8 @@ public class adminServlet extends HttpServlet {
 			return;
 		}
 		if (operation.equals("changeRole")) { changeRole(request, out); }
-		if (operation.equals("changeStatus")) { changeStatus(request, out); }
-		if (operation.equals("deleteOrder")) { deleteOrder(request, out); }
+		if (operation.equals("changeStatus")) { changeStatus(request, out); operation = "showOrders"; }
+		if (operation.equals("deleteOrder")) { deleteOrder(request, out); operation = "showOrders"; }
 
 		createHtmlBegining(out, request);
 	    createHeader(out, request);
@@ -136,7 +136,7 @@ public class adminServlet extends HttpServlet {
 			        		+ "        <div class=\"col-3\">\r\n"
 			        		+ "          <h5>"+rs.getString("name")+ " "+rs.getString("surname")+"</h5>\r\n"
 			        		+ "        </div>\r\n"
-			        		+ "        <form>\r\n"
+			        		+ "        <form action=\"adminServlet\" method=\"post\">\r\n"
 			        		+ "          <input type=\"hidden\" name=\"id\" value=\""+rs.getInt("id")+"\">\r\n"
 			        		+ "          <input type=\"hidden\" name=\"role\" value=\""+rs.getString("role")+"\">\r\n"
 			        		+ "          <input type=\"hidden\" name=\"operation\" value=\"changeRole\">\r\n"
@@ -146,10 +146,8 @@ public class adminServlet extends HttpServlet {
 			        		+ "            </button>\r\n"
 			        		+ "          </div>\r\n"
 			        		+ "        </form>\r\n"
-			        		+ "        <form>\r\n"
+			        		+ "        <form action=\"adminServlet\" method=\"post\">\r\n"
 			        		+ "          <input type=\"hidden\" name=\"id\" value=\""+rs.getInt("id")+"\" style=\"\">\r\n"
-			        		+ "          <input type=\"hidden\" name=\"name\" value=\""+rs.getString("name")+"\">\r\n"
-					    	+ "          <input type=\"hidden\" name=\"surname\" value=\""+rs.getString("surname")+"\">\r\n"
 			        	    + "          <input type=\"hidden\" name=\"operation\" value=\"showOrders\">\r\n"
 			        		+ "          <div class=\"col-3\">\r\n"
 			        		+ "            <button type=\"submit\" class=\"btn btn-link text-light\">\r\n"
@@ -183,7 +181,7 @@ public class adminServlet extends HttpServlet {
 				    	 		+ "        <div class=\"col-md-3\">\r\n"
 				    	 		+ "          <h5>"+rs.getString("name") + " "+rs.getString("surname")+"</h5>\r\n"
 				    	 		+ "        </div>\r\n"
-				    	 		+ "        <form>\r\n"
+				    	 		+ "        <form action=\"adminServlet\" method=\"post\">\r\n"
 				    	 		+ "          <input type=\"hidden\" name=\"id\" value=\""+rs.getInt("id")+"\">\r\n"
 				    	 	    + "          <input type=\"hidden\" name=\"role\" value=\""+rs.getString("role")+"\">\r\n"
 				    	 		+ "          <input type=\"hidden\" name=\"operation\" value=\"changeRole\">\r\n"
@@ -214,24 +212,32 @@ public class adminServlet extends HttpServlet {
 	}
 	
 	private void showOrders(PrintWriter out, HttpServletRequest request) {
-		out.println("<div class=\"py-5\">\r\n"
-				+ "    <div class=\"container\">\r\n"
-				+ "      <div class=\"row\">\r\n"
-				+ "        <div class=\"col-md-12\">\r\n"
-				+ "          <h1 class=\"display-4 text-center\">Orders: "+request.getParameter("name")+" "+request.getParameter("surname")+"</h1>\r\n"
-				+ "        </div>\r\n"
-				+ "      </div>\r\n"
-				+ "      <div class=\"row\">\r\n"
-				+ "        <div class=\"col-3 col-md-4\">\r\n"
-				+ "          <h4>Order number</h4>\r\n"
-				+ "        </div>\r\n"
-				+ "        <div class=\"col-3 col-md-4\">\r\n"
-				+ "          <h4>Status</h4>\r\n"
-				+ "        </div>\r\n"
-				+ "        <div class=\"col-md-4\"></div>\r\n"
-				+ "      </div>");
 		try {
-			String sql = "SELECT * FROM orders WHERE customer_id = ?";
+			String sql = "SELECT name, surname FROM users WHERE id = ?";
+			try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql)) {
+				stmt.setInt(1, Integer.parseInt(request.getParameter("id")));
+				try (ResultSet rs = stmt.executeQuery()) {
+					rs.next();
+					out.println("<div class=\"py-5\">\r\n"
+							+ "    <div class=\"container\">\r\n"
+							+ "      <div class=\"row\">\r\n"
+							+ "        <div class=\"col-md-12\">\r\n"
+							+ "          <h1 class=\"display-4 text-center\">Orders: "+rs.getString("name")+" "+rs.getString("surname")+"</h1>\r\n"
+							+ "        </div>\r\n"
+							+ "      </div>\r\n"
+							+ "      <div class=\"row\">\r\n"
+							+ "        <div class=\"col-3 col-md-4\">\r\n"
+							+ "          <h4>Order number</h4>\r\n"
+							+ "        </div>\r\n"
+							+ "        <div class=\"col-3 col-md-4\">\r\n"
+							+ "          <h4>Status</h4>\r\n"
+							+ "        </div>\r\n"
+							+ "        <div class=\"col-md-4\"></div>\r\n"
+							+ "      </div>");
+				}
+			}
+			
+			sql = "SELECT * FROM orders WHERE customer_id = ?";
 			try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql)) {
 				stmt.setInt(1, Integer.parseInt(request.getParameter("id")));
 				try (ResultSet rs = stmt.executeQuery()) {
@@ -250,12 +256,14 @@ public class adminServlet extends HttpServlet {
 				    			+ "              <option value=\"delivered\" "+((rs.getString("status").equals("delivered")) ? "selected" : "")+">delivered</option>\r\n"
 				    			+ "            </select>\r\n"
 				    			+ "            <input type=\"hidden\" name=\"operation\" value=\"changeStatus\">\r\n"
+				    			+ "            <input type=\"hidden\" name=\"id\" value=\""+rs.getInt("customer_id")+"\">\r\n"
 				    			+ "            <input type=\"hidden\" name=\"order_id\" value=\""+rs.getInt("id")+"\" style=\"\">\r\n"
 				    			+ "            <button type=\"submit\" class=\"btn btn-sm btn-outline-light\">Change status</button>\r\n"
 				    			+ "          </form>\r\n"
 				    			+ "        </div>\r\n"
 				    			+ "        <div class=\"col-3 col-md-4 d-flex align-items-center\">\r\n"
-				    			+ "          <form class=\"\">\r\n"
+				    			+ "          <form action=\"adminServlet\" method=\"post\">\r\n"
+				    			+ "            <input type=\"hidden\" name=\"id\" value=\""+rs.getInt("customer_id")+"\">\r\n"
 				    			+ "            <input type=\"hidden\" name=\"order_id\" value=\""+rs.getInt("id")+"\">\r\n"
 				    			+ "            <input type=\"hidden\" name=\"operation\" value=\"deleteOrder\">\r\n"
 				    			+ "            <button type=\"submit\" class=\"btn btn-link text-danger\">\r\n"
@@ -307,7 +315,7 @@ public class adminServlet extends HttpServlet {
 			String sql = "UPDATE orders SET status = ? WHERE id = ?";
 			try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql)) {
 				stmt.setString(1, request.getParameter("selectedStatus"));
-				stmt.setInt(2, Integer.parseInt(request.getParameter("order_id")));
+				stmt.setInt(2, Integer.parseInt(request.getParameter("order_id"))); 
 				stmt.executeUpdate();
 			}    
         } catch (Exception e) {

@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 
 public class basketServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
@@ -125,6 +124,7 @@ public class basketServlet extends HttpServlet {
 					e.printStackTrace();
 			        out.println("An error occurred displaying basket content.");
 				}
+				
 		out.println("</div>"
 				+ "</div>");
 		out.println("    <div class=\"container\">\r\n"
@@ -252,7 +252,6 @@ public class basketServlet extends HttpServlet {
 		    		+ "FROM `basket` \r\n"
 		    		+ "INNER JOIN stock ON (basket.product_id=stock.product_id) \r\n"
 		    		+ "WHERE basket.customer_id = ?";
-    		
     		try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql)) {
     			stmt.setInt(1, customer_id);
     			try (ResultSet rs = stmt.executeQuery()) {

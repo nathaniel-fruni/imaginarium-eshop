@@ -149,6 +149,7 @@ public class mainServlet extends HttpServlet {
 				+ "    </div>\r\n"
 				+ "    <div class=\"container\">\r\n"
 				+ "      <div class=\"row\">");
+		
 		// books
 		try {
 			String sql = "SELECT products.id AS id, products.book_name AS book_name, products.author_name AS author_name, "
@@ -156,7 +157,6 @@ public class mainServlet extends HttpServlet {
 		    		+ "products.picture_name AS picture_name, stock.quantity AS quantity FROM `products` "
 		    		+ "INNER JOIN stock ON (products.id=stock.product_id) "
 		    		+ "WHERE quantity > 0";
-			
 			try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql);
 					ResultSet rs = stmt.executeQuery()) {
 				while (rs.next()) {
@@ -193,7 +193,6 @@ public class mainServlet extends HttpServlet {
 	private void showBook(PrintWriter out, HttpServletRequest request) {
 		try {
 			String sql = "SELECT * FROM products WHERE id = ?";
-			
 			try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql)) {
 				stmt.setInt(1, Integer.parseInt(request.getParameter("id")));
 				try (ResultSet rs = stmt.executeQuery()) {
@@ -270,7 +269,6 @@ public class mainServlet extends HttpServlet {
 	    
 	    try {
 	    	Integer customer_id = getUserID(request, response);
-	    	
 	    	String checkIfExistsQuery = "SELECT count(id) AS pocet FROM basket WHERE " 
 			          + "(customer_id= ?) AND (product_id = ?)";
 	    	String insertQuery = "INSERT INTO basket (customer_id, product_id, price, quantity) values (?, ?, ?, 1)";

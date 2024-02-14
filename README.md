@@ -24,9 +24,8 @@ This README provides details about the project:
 
 This Dynamic Web Project is built using JavaEE, with a focus on the following key components:
 
-- **Java Servlets:** The backend logic and server-side processing are implemented using Java Servlets.
-- **JavaServer Pages (JSP):** Dynamic content and presentation logic are handled using JSP, allowing for the creation of dynamic web pages.
-- **MySQL Connector/J:** The project uses the MySQL Connector/J library to establish a connection with the MySQL database.
+- **Java Servlets:** The backend logic, server-side processing, and dynamic content generation are implemented using Java Servlets
+- **MySQL Connector/J:** To interact with the database, the project utilizes the MySQL Connector/J library.
 
 ### Project Structure
 
@@ -34,7 +33,7 @@ The project is organized with the following structure:
 
 - `src/`: Contains the source code for the project.
   - `java/`: Java Servlets source code.
-  - `webapp/`: Pages and assets.
+  - `webapp/`: Assets.
 
 
 ### Key Features

@@ -117,7 +117,6 @@ public class ordersServlet extends mainServlet {
 					+ "FROM `order_items`\r\n"
 					+ "INNER JOIN products ON (order_items.product_id = products.id)\r\n"
 					+ "WHERE order_id = ?";
-			
 			try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql)) {
 				stmt.setInt(1, Integer.parseInt(request.getParameter("id")));
 				try (ResultSet rs = stmt.executeQuery()) {
