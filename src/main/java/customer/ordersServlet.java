@@ -37,12 +37,12 @@ public class ordersServlet extends mainServlet {
 		mainServlet.createHtmlBegining(out, request);
 		mainServlet.createHeader(out, request);
 		if (operation.equals("showOrder")) { showOrder(out, request); }
-		else { createMain(out, request); }
+		else { createMain(out, request, response); }
 	    mainServlet.createFooter(out, request);
 	    mainServlet.createHtmlEnd(out, request);
 	}
 	
-	private void createMain(PrintWriter out, HttpServletRequest request) {
+	private void createMain(PrintWriter out, HttpServletRequest request, HttpServletResponse response) {
 		out.println("<div class=\"bg-dark py-3 mx-5 mt-5 mb-2\" style=\"	background-image: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.8));	background-position: top left;	background-size: 100%;	background-repeat: repeat;\">\r\n"
 				+ "    <div class=\"container\">\r\n"
 				+ "      <div class=\"row\">\r\n"
@@ -60,9 +60,10 @@ public class ordersServlet extends mainServlet {
 				+ "      </div>");
 				try {
 					String sql = "SELECT * FROM `orders` WHERE customer_id = ?";
+					int userId = getUserID(request, response);
 					
 					try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql)) {
-						stmt.setInt(1, getUserID(request));
+						stmt.setInt(1, userId);
 					    try (ResultSet rs = stmt.executeQuery()) {
 					    	while (rs.next()) {
 								out.println("<div class=\"row justify-content-center\">\r\n"

@@ -8,8 +8,8 @@ import jakarta.servlet.http.HttpSession;
 import util.DButil;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 
 public class adminServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
@@ -32,7 +32,12 @@ public class adminServlet extends HttpServlet {
 		if (operation == null) { response.sendRedirect("admin.html"); return;}
 		
 		if (operation.equals("logout")) {
-			logout(request, response);
+			try {
+				logout(request, response);
+			} catch (IOException e) {
+		        e.printStackTrace();
+		        out.println("An error occurred during logout.");
+			}
 			return;
 		}
 		if (operation.equals("changeRole")) { changeRole(request, out); }
@@ -42,7 +47,7 @@ public class adminServlet extends HttpServlet {
 		createHtmlBegining(out, request);
 	    createHeader(out, request);
 	    if (operation.equals("showOrders")) { showOrders(out, request); }
-	    else { createMain(out, request); }
+	    else { createMain(out, request, response); }
 	    createFooter(out, request);
 	    createHtmlEnd(out, request);
 	}
@@ -106,7 +111,7 @@ public class adminServlet extends HttpServlet {
 				+ "  </div>");
 	}
 	
-	private void createMain(PrintWriter out, HttpServletRequest request) {
+	private void createMain(PrintWriter out, HttpServletRequest request, HttpServletResponse response) {
 		out.println("<div class=\"py-5\">\r\n"
 				+ "    <div class=\"container\">\r\n"
 				+ "      <div class=\"row\">\r\n"
@@ -119,38 +124,42 @@ public class adminServlet extends HttpServlet {
 				+ "          <h3 class=\"text-primary mb-3\">Customers</h3>\r\n"
 				+ "        </div>\r\n"
 				+ "      </div>");
+		
 		try {
-			Statement stmt = DButil.getConnection(request).createStatement();
-		    ResultSet rs = stmt.executeQuery("SELECT id, name, surname, role FROM `users` WHERE role=\"customer\"");
-		    while (rs.next()) {
-		        out.println("<div class=\"row\">\r\n"
-		        		+ "        <div class=\"col-3\">\r\n"
-		        		+ "          <h5>"+rs.getString("name")+ " "+rs.getString("surname")+"</h5>\r\n"
-		        		+ "        </div>\r\n"
-		        		+ "        <form>\r\n"
-		        		+ "          <input type=\"hidden\" name=\"id\" value=\""+rs.getInt("id")+"\">\r\n"
-		        		+ "          <input type=\"hidden\" name=\"role\" value=\""+rs.getString("role")+"\">\r\n"
-		        		+ "          <input type=\"hidden\" name=\"operation\" value=\"changeRole\">\r\n"
-		        		+ "          <div class=\"col-3\">\r\n"
-		        		+ "            <button type=\"submit\" class=\"btn btn-link text-success\">\r\n"
-		        		+ "              <h5 style=\"margin: 0;\" onmouseover=\"this.style.textDecoration='underline'\" onmouseout=\"this.style.textDecoration='none'\">promote to admin</h5>\r\n"
-		        		+ "            </button>\r\n"
-		        		+ "          </div>\r\n"
-		        		+ "        </form>\r\n"
-		        		+ "        <form>\r\n"
-		        		+ "          <input type=\"hidden\" name=\"id\" value=\""+rs.getInt("id")+"\" style=\"\">\r\n"
-		        		+ "          <input type=\"hidden\" name=\"name\" value=\""+rs.getString("name")+"\">\r\n"
-				    	+ "          <input type=\"hidden\" name=\"surname\" value=\""+rs.getString("surname")+"\">\r\n"
-		        	    + "          <input type=\"hidden\" name=\"operation\" value=\"showOrders\">\r\n"
-		        		+ "          <div class=\"col-3\">\r\n"
-		        		+ "            <button type=\"submit\" class=\"btn btn-link text-light\">\r\n"
-		        		+ "              <h5 style=\"margin: 0;\" onmouseover=\"this.style.textDecoration='underline'\" onmouseout=\"this.style.textDecoration='none'\">view orders</h5>\r\n"
-		        		+ "            </button>\r\n"
-		        		+ "          </div>\r\n"
-		        		+ "        </form>\r\n"
-		        		+ "      </div>");
-		     }
-		     rs.close(); 
+			String sql = "SELECT id, name, surname, role FROM `users` WHERE role=\"customer\"";
+			int userId = getUserID(request, response);
+			
+			try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql);
+					ResultSet rs = stmt.executeQuery()) {
+				while (rs.next()) {
+			        out.println("<div class=\"row\">\r\n"
+			        		+ "        <div class=\"col-3\">\r\n"
+			        		+ "          <h5>"+rs.getString("name")+ " "+rs.getString("surname")+"</h5>\r\n"
+			        		+ "        </div>\r\n"
+			        		+ "        <form>\r\n"
+			        		+ "          <input type=\"hidden\" name=\"id\" value=\""+rs.getInt("id")+"\">\r\n"
+			        		+ "          <input type=\"hidden\" name=\"role\" value=\""+rs.getString("role")+"\">\r\n"
+			        		+ "          <input type=\"hidden\" name=\"operation\" value=\"changeRole\">\r\n"
+			        		+ "          <div class=\"col-3\">\r\n"
+			        		+ "            <button type=\"submit\" class=\"btn btn-link text-success\">\r\n"
+			        		+ "              <h5 style=\"margin: 0;\" onmouseover=\"this.style.textDecoration='underline'\" onmouseout=\"this.style.textDecoration='none'\">promote to admin</h5>\r\n"
+			        		+ "            </button>\r\n"
+			        		+ "          </div>\r\n"
+			        		+ "        </form>\r\n"
+			        		+ "        <form>\r\n"
+			        		+ "          <input type=\"hidden\" name=\"id\" value=\""+rs.getInt("id")+"\" style=\"\">\r\n"
+			        		+ "          <input type=\"hidden\" name=\"name\" value=\""+rs.getString("name")+"\">\r\n"
+					    	+ "          <input type=\"hidden\" name=\"surname\" value=\""+rs.getString("surname")+"\">\r\n"
+			        	    + "          <input type=\"hidden\" name=\"operation\" value=\"showOrders\">\r\n"
+			        		+ "          <div class=\"col-3\">\r\n"
+			        		+ "            <button type=\"submit\" class=\"btn btn-link text-light\">\r\n"
+			        		+ "              <h5 style=\"margin: 0;\" onmouseover=\"this.style.textDecoration='underline'\" onmouseout=\"this.style.textDecoration='none'\">view orders</h5>\r\n"
+			        		+ "            </button>\r\n"
+			        		+ "          </div>\r\n"
+			        		+ "        </form>\r\n"
+			        		+ "      </div>");
+			     }
+			}  
 		     
 		     out.println("<div class=\"d-flex justify-content-center\">\r\n"
 		     		+ "        <div class=\"section w-75 p-3\">\r\n"
@@ -165,34 +174,43 @@ public class adminServlet extends HttpServlet {
 		     		+ "        </div>\r\n"
 		     		+ "      </div>");
 		     
-		     ResultSet rs2 = stmt.executeQuery("SELECT id, name, surname, role FROM `users` WHERE role=\"admin\" AND id != "+getUserID(request)+"");
-		     while(rs2.next()) {
-		    	 out.println(" <div class=\"row\">\r\n"
-		    	 		+ "        <div class=\"col-md-3\">\r\n"
-		    	 		+ "          <h5>"+rs2.getString("name") + " "+rs2.getString("surname")+"</h5>\r\n"
-		    	 		+ "        </div>\r\n"
-		    	 		+ "        <form>\r\n"
-		    	 		+ "          <input type=\"hidden\" name=\"id\" value=\""+rs2.getInt("id")+"\">\r\n"
-		    	 	    + "          <input type=\"hidden\" name=\"role\" value=\""+rs2.getString("role")+"\">\r\n"
-		    	 		+ "          <input type=\"hidden\" name=\"operation\" value=\"changeRole\">\r\n"
-		    	 		+ "          <div class=\"col-3\">\r\n"
-		    	 		+ "            <button type=\"submit\" class=\"btn btn-link text-danger\">\r\n"
-		    	 		+ "              <h5 style=\"margin: 0;\" onmouseover=\"this.style.textDecoration='underline'\" onmouseout=\"this.style.textDecoration='none'\">revoke admin privileges</h5>\r\n"
-		    	 		+ "            </button>\r\n"
-		    	 		+ "          </div>\r\n"
-		    	 		+ "        </form>\r\n"
-		    	 		+ "      </div>");
+		     sql = "SELECT id, name, surname, role FROM `users` WHERE role=\"admin\" AND id != ?";
+		     try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql)) {
+		    	 stmt.setInt(1, userId);
+		    	 try (ResultSet rs = stmt.executeQuery()) {
+		    		 while(rs.next()) {
+				    	 out.println(" <div class=\"row\">\r\n"
+				    	 		+ "        <div class=\"col-md-3\">\r\n"
+				    	 		+ "          <h5>"+rs.getString("name") + " "+rs.getString("surname")+"</h5>\r\n"
+				    	 		+ "        </div>\r\n"
+				    	 		+ "        <form>\r\n"
+				    	 		+ "          <input type=\"hidden\" name=\"id\" value=\""+rs.getInt("id")+"\">\r\n"
+				    	 	    + "          <input type=\"hidden\" name=\"role\" value=\""+rs.getString("role")+"\">\r\n"
+				    	 		+ "          <input type=\"hidden\" name=\"operation\" value=\"changeRole\">\r\n"
+				    	 		+ "          <div class=\"col-3\">\r\n"
+				    	 		+ "            <button type=\"submit\" class=\"btn btn-link text-danger\">\r\n"
+				    	 		+ "              <h5 style=\"margin: 0;\" onmouseover=\"this.style.textDecoration='underline'\" onmouseout=\"this.style.textDecoration='none'\">revoke admin privileges</h5>\r\n"
+				    	 		+ "            </button>\r\n"
+				    	 		+ "          </div>\r\n"
+				    	 		+ "        </form>\r\n"
+				    	 		+ "      </div>");
+				     }
+		    	 }
 		     }
+		     
 		     out.println("</div>\r\n"
 		     		+ "    <div class=\"section text-center p-3\">\r\n"
 		     		+ "      <div class=\"container\">\r\n"
 		     		+ "        <hr style=\"border-color: white;\">\r\n"
 		     		+ "      </div>\r\n"
 		     		+ "    </div>");
-		     
-		     rs2.close();
-		     stmt.close();
-		} catch (Exception e) { out.println(e.getMessage()); }
+		} catch (IOException e) {
+			e.printStackTrace();
+			out.println("An error occured while getting user ID."); 
+		} catch (Exception e) { 
+			e.printStackTrace();
+			out.println("An error occured when displaying users."); 
+		}
 	}
 	
 	private void showOrders(PrintWriter out, HttpServletRequest request) {
@@ -213,42 +231,47 @@ public class adminServlet extends HttpServlet {
 				+ "        <div class=\"col-md-4\"></div>\r\n"
 				+ "      </div>");
 		try {
-			Statement stmt = DButil.getConnection(request).createStatement();
-		    ResultSet rs = stmt.executeQuery("SELECT * FROM orders WHERE customer_id = " + request.getParameter("id"));
-		    while(rs.next()) {
-		    	out.println("<div class=\"row\">\r\n"
-		    			+ "        <div class=\"col-3 col-md-4 d-flex align-items-center\">\r\n"
-		    			+ "          <h4>"+rs.getInt("order_number")+"</h4>\r\n"
-		    			+ "        </div>\r\n"
-		    			+ "        <div class=\"col-3 col-md-4 align-items-center d-flex\">\r\n"
-		    			+ "          <form action=\"adminServlet\" method=\"post\">\r\n"
-		    			+ "            <select class=\"rounded bg-dark mr-2\" name=\"selectedStatus\">\r\n"
-		    			+ "              <option value=\"new\" "+((rs.getString("status").equals("new")) ? "selected" : "")+">new</option>\r\n"
-		    			+ "              <option value=\"proccessing\" "+((rs.getString("status").equals("proccessing")) ? "selected" : "")+">proccessing</option>\r\n"
-		    			+ "              <option value\"confirmed\" "+((rs.getString("status").equals("confirmed")) ? "selected" : "")+">confirmed</option>\r\n"
-		    			+ "              <option value=\"shipped\" "+((rs.getString("status").equals("shipped")) ? "selected" : "")+">shipped</option>\r\n"
-		    			+ "              <option value=\"delivered\" "+((rs.getString("status").equals("delivered")) ? "selected" : "")+">delivered</option>\r\n"
-		    			+ "            </select>\r\n"
-		    			+ "            <input type=\"hidden\" name=\"operation\" value=\"changeStatus\">\r\n"
-		    			+ "            <input type=\"hidden\" name=\"order_id\" value=\""+rs.getInt("id")+"\" style=\"\">\r\n"
-		    			+ "            <button type=\"submit\" class=\"btn btn-sm btn-outline-light\">Change status</button>\r\n"
-		    			+ "          </form>\r\n"
-		    			+ "        </div>\r\n"
-		    			+ "        <div class=\"col-3 col-md-4 d-flex align-items-center\">\r\n"
-		    			+ "          <form class=\"\">\r\n"
-		    			+ "            <input type=\"hidden\" name=\"order_id\" value=\""+rs.getInt("id")+"\">\r\n"
-		    			+ "            <input type=\"hidden\" name=\"operation\" value=\"deleteOrder\">\r\n"
-		    			+ "            <button type=\"submit\" class=\"btn btn-link text-danger\">\r\n"
-		    			+ "              <h5 style=\"margin: 0px; text-decoration: none;\" onmouseover=\"this.style.textDecoration='underline'\" onmouseout=\"this.style.textDecoration='none'\">Delete</h5>\r\n"
-		    			+ "            </button>\r\n"
-		    			+ "          </form>\r\n"
-		    			+ "        </div>\r\n"
-		    			+ "      </div>");
-		    }
+			String sql = "SELECT * FROM orders WHERE customer_id = ?";
+			try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql)) {
+				stmt.setInt(1, Integer.parseInt(request.getParameter("id")));
+				try (ResultSet rs = stmt.executeQuery()) {
+					while(rs.next()) {
+				    	out.println("<div class=\"row\">\r\n"
+				    			+ "        <div class=\"col-3 col-md-4 d-flex align-items-center\">\r\n"
+				    			+ "          <h4>"+rs.getInt("order_number")+"</h4>\r\n"
+				    			+ "        </div>\r\n"
+				    			+ "        <div class=\"col-3 col-md-4 align-items-center d-flex\">\r\n"
+				    			+ "          <form action=\"adminServlet\" method=\"post\">\r\n"
+				    			+ "            <select class=\"rounded bg-dark mr-2\" name=\"selectedStatus\">\r\n"
+				    			+ "              <option value=\"new\" "+((rs.getString("status").equals("new")) ? "selected" : "")+">new</option>\r\n"
+				    			+ "              <option value=\"proccessing\" "+((rs.getString("status").equals("proccessing")) ? "selected" : "")+">proccessing</option>\r\n"
+				    			+ "              <option value\"confirmed\" "+((rs.getString("status").equals("confirmed")) ? "selected" : "")+">confirmed</option>\r\n"
+				    			+ "              <option value=\"shipped\" "+((rs.getString("status").equals("shipped")) ? "selected" : "")+">shipped</option>\r\n"
+				    			+ "              <option value=\"delivered\" "+((rs.getString("status").equals("delivered")) ? "selected" : "")+">delivered</option>\r\n"
+				    			+ "            </select>\r\n"
+				    			+ "            <input type=\"hidden\" name=\"operation\" value=\"changeStatus\">\r\n"
+				    			+ "            <input type=\"hidden\" name=\"order_id\" value=\""+rs.getInt("id")+"\" style=\"\">\r\n"
+				    			+ "            <button type=\"submit\" class=\"btn btn-sm btn-outline-light\">Change status</button>\r\n"
+				    			+ "          </form>\r\n"
+				    			+ "        </div>\r\n"
+				    			+ "        <div class=\"col-3 col-md-4 d-flex align-items-center\">\r\n"
+				    			+ "          <form class=\"\">\r\n"
+				    			+ "            <input type=\"hidden\" name=\"order_id\" value=\""+rs.getInt("id")+"\">\r\n"
+				    			+ "            <input type=\"hidden\" name=\"operation\" value=\"deleteOrder\">\r\n"
+				    			+ "            <button type=\"submit\" class=\"btn btn-link text-danger\">\r\n"
+				    			+ "              <h5 style=\"margin: 0px; text-decoration: none;\" onmouseover=\"this.style.textDecoration='underline'\" onmouseout=\"this.style.textDecoration='none'\">Delete</h5>\r\n"
+				    			+ "            </button>\r\n"
+				    			+ "          </form>\r\n"
+				    			+ "        </div>\r\n"
+				    			+ "      </div>");
+				    }
+				}
+			}
 		    out.println("<div class=\"mt-3 text-center\"><a href=\"adminServlet?operation=1\" class=\"btn btn-outline-light\">Back</a></div>");
-			rs.close();
-			stmt.close();
-		} catch (Exception e) { out.println(e.getMessage()); }
+		} catch (Exception e) {
+			e.printStackTrace();
+			out.println("An error occured when displaying orders.");
+		}
 		out.println("</div>\r\n"
 				+ "    <div class=\"section text-center p-3\">\r\n"
 				+ "      <div class=\"container\">\r\n"
@@ -259,31 +282,58 @@ public class adminServlet extends HttpServlet {
 	
 	private void changeRole(HttpServletRequest request, PrintWriter out) {
 		try {
-            Statement stmt = DButil.getConnection(request).createStatement();
+			String sql = "UPDATE users SET role = ? WHERE id = ?";
+			String role;
+			
             if (request.getParameter("role").equals("customer")) {
-            	stmt.executeUpdate("UPDATE users SET role = \"admin\" WHERE id = " + request.getParameter("id"));
+            	role = "admin";
             } else {
-            	stmt.executeUpdate("UPDATE users SET role = \"customer\" WHERE id = " + request.getParameter("id"));
+            	role = "customer";
             }
-            stmt.close();
-        } catch (Exception e) { out.println(e);}
+            
+            try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql)) {
+            	stmt.setString(1, role);
+            	stmt.setInt(2, Integer.parseInt(request.getParameter("id")));
+            	stmt.executeUpdate();
+            }
+        } catch (Exception e) {
+        	e.printStackTrace();
+			out.println("An error occured when updating user role.");
+        }
 	}
 	
 	private void changeStatus(HttpServletRequest request, PrintWriter out) {
 		try {
-            Statement stmt = DButil.getConnection(request).createStatement();
-            stmt.executeUpdate("UPDATE orders SET status = \""+request.getParameter("selectedStatus")+"\" WHERE id = " + request.getParameter("order_id"));
-            stmt.close();
-        } catch (Exception e) { out.println(e);}
+			String sql = "UPDATE orders SET status = ? WHERE id = ?";
+			try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql)) {
+				stmt.setString(1, request.getParameter("selectedStatus"));
+				stmt.setInt(2, Integer.parseInt(request.getParameter("order_id")));
+				stmt.executeUpdate();
+			}    
+        } catch (Exception e) {
+        	e.printStackTrace();
+			out.println("An error occured when updating order status.");
+        }
 	}
 	
 	private void deleteOrder(HttpServletRequest request, PrintWriter out) {
 		try {
-            Statement stmt = DButil.getConnection(request).createStatement();
-            stmt.executeUpdate("DELETE FROM orders WHERE id = " + request.getParameter("order_id"));
-            stmt.executeUpdate("DELETE FROM order_items WHERE order_id = " + request.getParameter("order_id"));
-            stmt.close();
-        } catch (Exception e) { out.println(e);}
+			String deleteOrderQuery = "DELETE FROM orders WHERE id = ?";
+			String deleteOrderItemsQuery = "DELETE FROM order_items WHERE order_id = ?";
+			
+			try (PreparedStatement OrderStmt = DButil.getConnection(request).prepareStatement(deleteOrderQuery);
+				 PreparedStatement OrderItemsStmt = DButil.getConnection(request).prepareStatement(deleteOrderItemsQuery)) {
+				
+				OrderStmt.setInt(1, Integer.parseInt(request.getParameter("order_id")));
+				OrderStmt.executeUpdate();
+				
+				OrderItemsStmt.setInt(1, Integer.parseInt(request.getParameter("order_id")));
+				OrderItemsStmt.executeUpdate();
+			}
+        } catch (Exception e) {
+        	e.printStackTrace();
+			out.println("An error occured when deleting order.");
+        }
 	}
 	
 	public static void logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -294,10 +344,14 @@ public class adminServlet extends HttpServlet {
 	    response.sendRedirect("index.html");
 	}
 	
-	private Integer getUserID(HttpServletRequest request) {
-		HttpSession session = request.getSession();
-		Integer admin_id = (Integer)session.getAttribute("ID");
-		return admin_id;
+	private Integer getUserID(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		HttpSession session = request.getSession(false); 
+	    if (session != null) {
+	    	Integer admin_id = (Integer)session.getAttribute("ID");
+			return admin_id;
+	    }
+	    response.sendRedirect("index.html");
+	    return 0;
 	}
 
 }

@@ -77,7 +77,8 @@ public class adminAuthServlet extends HttpServlet {
                 }
             }
         } catch (Exception e) {
-            out.println(e);
+        	e.printStackTrace();
+			out.println("Unexpected error occured.");
         }
         return false;
     }

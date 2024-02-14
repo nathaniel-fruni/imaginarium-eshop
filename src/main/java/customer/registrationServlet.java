@@ -116,7 +116,8 @@ public class registrationServlet extends HttpServlet {
 	            rs.close();
 	        }
 	    } catch (Exception e) {
-	        out.println(e.getMessage());
+	    	e.printStackTrace();
+			out.println("An error occured when trying to register user.");
 	    }
 	}
 

@@ -33,7 +33,12 @@ public class mainServlet extends HttpServlet {
 		if (operation == null) { response.sendRedirect("index.html"); return;}
 		
 		if (operation.equals("logout")) {
-			logout(request, response);
+			try {
+				logout(request, response);
+			} catch (IOException e) {
+		        e.printStackTrace();
+		        out.println("An error occurred during logout.");
+			}
 			return;
 		}
 		
@@ -42,7 +47,7 @@ public class mainServlet extends HttpServlet {
 	    if (operation.equals("showBook")) { showBook(out, request); }
 	    else {
 	    	if (operation.equals("buy")) { 
-		    	addToBasket(out, request); 
+		    	addToBasket(out, request, response); 
 		    	createAddedToBasketPage(out);
 		    }
 		    else { createMain(out, request); }
@@ -175,7 +180,10 @@ public class mainServlet extends HttpServlet {
 			        		+ "        </div>");
 			     }
 			}
-		} catch (Exception e) { out.println(e.getMessage()); }
+		} catch (Exception e) {
+			e.printStackTrace();
+	        out.println("An error occurred while displaying books.");
+		}
 		
 		out.println("</div>\r\n"
 				+ "    </div>\r\n"
@@ -233,7 +241,10 @@ public class mainServlet extends HttpServlet {
 				    }
 				}
 			}
-		} catch (Exception e) { out.println(e.getMessage()); }
+		} catch (Exception e) {
+			e.printStackTrace();
+	        out.println("An error occurred while displaying book info.");
+		}
 	}
 	
 	private void createAddedToBasketPage(PrintWriter out) {
@@ -251,14 +262,15 @@ public class mainServlet extends HttpServlet {
 				+ "  </div>");
 	}
 	
-	private void addToBasket(PrintWriter out, HttpServletRequest request) {
-		Integer customer_id = getUserID(request);
+	private void addToBasket(PrintWriter out, HttpServletRequest request, HttpServletResponse response) {
 		int product_id = Integer.parseInt(request.getParameter("id"));
 	    double price = Double.parseDouble(request.getParameter("price"));
 	    Connection con = DButil.getConnection(request);
 	    
 	    
 	    try {
+	    	Integer customer_id = getUserID(request, response);
+	    	
 	    	String checkIfExistsQuery = "SELECT count(id) AS pocet FROM basket WHERE " 
 			          + "(customer_id= ?) AND (product_id = ?)";
 	    	String insertQuery = "INSERT INTO basket (customer_id, product_id, price, quantity) values (?, ?, ?, 1)";
@@ -290,7 +302,13 @@ public class mainServlet extends HttpServlet {
 	                }
 	            }
 	    	}
-		  } catch (Exception e) {}
+		  } catch (IOException e) {
+			  e.printStackTrace();
+			  out.println("An error occured while getting user ID."); 
+		  } catch (Exception e) {
+			  e.printStackTrace();
+		      out.println("Unexpected error occured.");
+		  }
 	}
 	
 	public static void logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -300,12 +318,15 @@ public class mainServlet extends HttpServlet {
 	    }
 	    response.sendRedirect("index.html");
 	}
-
 	
-	public static Integer getUserID(HttpServletRequest request) {
-		HttpSession session = request.getSession();
-		Integer customer_id = (Integer)session.getAttribute("ID");
-		return customer_id;
+	protected static Integer getUserID(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		HttpSession session = request.getSession(false); 
+	    if (session != null) {
+	    	Integer customer_id = (Integer)session.getAttribute("ID");
+			return customer_id;
+	    }
+	    response.sendRedirect("index.html");
+	    return 0;
 	}
 
 }
