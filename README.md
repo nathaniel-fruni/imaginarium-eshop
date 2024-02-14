@@ -32,8 +32,21 @@ This Dynamic Web Project is built using JavaEE, with a focus on the following ke
 The project is organized with the following structure:
 
 - `src/`: Contains the source code for the project.
-  - `java/`: Java Servlets source code.
-  - `webapp/`: Assets.
+  - `main/`
+    - `java/`: Java Servlets source code.
+      - `/admin`: Admin related Servlets.
+      - `/customer`: Customer related Servlets.
+      - `/listener`: Listeners.
+      - `/util`: Utility classes.
+   - `webapp/`: Conatins web assets.
+     - `images/`
+     - `js/`
+     - `META-INF/`
+     - `styles/`
+     - `WEB-INF/`
+     - `admin.html`: Admin login page.
+     - `index.html`: Main login page.
+- `database/`: Contains sql file for database. import.
 
 
 ### Key Features

@@ -30,7 +30,12 @@ public class ordersServlet extends mainServlet {
 		if (operation == null) { response.sendRedirect("index.html"); return;}
 		
 		if (operation.equals("logout")) {
-			mainServlet.logout(request, response);
+			try {
+				mainServlet.logout(request, response);
+			} catch (IOException e) {
+		        e.printStackTrace();
+		        out.println("An error occurred during logout.");
+			}
 			return;
 		}
 		
@@ -88,7 +93,10 @@ public class ordersServlet extends mainServlet {
 							}
 					    }
 					}
-				} catch (Exception e) { out.println(e.getMessage()); }
+				} catch (Exception e) {
+					e.printStackTrace();
+			        out.println("An error occured displaying orders.");
+				}
 				out.println("</div>\r\n"
 						+ "</div>"
 						+ "<div class=\"col-md-12 text-center\"><a class=\"btn btn-outline-light\" href=\"mainServlet?operation=1\">Back to home</a></div>");
@@ -135,11 +143,14 @@ public class ordersServlet extends mainServlet {
 				    }
 				}
 			}
-		} catch (Exception e) { out.println(e.getMessage()); }
+		} catch (Exception e) { 
+			e.printStackTrace();
+	        out.println("An error occured displaying an order.");
+		}
 		out.println("<div class=\"row d-flex justify-content-end m-3\">\r\n"
 				+ "      <p class=\"text-primary\">Amount: "+request.getParameter("amount")+"€</p>\r\n"
-				+ "    </div>\r\n"
-				+ "  </div>");
+				+ "    </div>\r\n");
+		out.println("<div class=\"col-md-12 text-center\"><a class=\"btn btn-outline-light\" href=\"ordersServlet?operation=1\">Back to orders</a></div></div>");
 	}
 
 }
