@@ -58,7 +58,8 @@ The project is organized with the following structure:
 - Place book to basket.
 - See basket content. (edit basket content)
 - Place an order.
-- See list or order.
+- Collect stars to increase your member discount.
+- See list of orders.
 - See order detail.
 
 #### Admin account
