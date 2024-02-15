@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hostiteľ: 127.0.0.1:3306
--- Čas generovania: St 14.Feb 2024, 21:15
+-- Čas generovania: Št 15.Feb 2024, 15:13
 -- Verzia serveru: 8.2.0
 -- Verzia PHP: 8.2.13
 
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS `basket` (
   PRIMARY KEY (`id`),
   KEY `customer_id` (`customer_id`),
   KEY `product_id` (`product_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=83 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=94 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- --------------------------------------------------------
 
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `status` varchar(20) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `user_id` (`customer_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=42 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Sťahujem dáta pre tabuľku `orders`
@@ -68,7 +68,10 @@ INSERT INTO `orders` (`id`, `order_number`, `order_date`, `customer_id`, `amount
 (26, 1004, '2023-12-13', 23, 11.16, 'delivered'),
 (27, 1005, '2023-12-13', 26, 71.25, 'delivered'),
 (28, 1006, '2023-12-13', 26, 13.3, 'delivered'),
-(36, 1011, '2024-02-14', 26, 29.44, 'new');
+(36, 1011, '2024-02-14', 26, 29.44, 'new'),
+(38, 1012, '2024-02-15', 26, 90.16, 'new'),
+(39, 1013, '2024-02-15', 26, 142.1, 'new'),
+(40, 1014, '2024-02-15', 26, 164.64, 'new');
 
 -- --------------------------------------------------------
 
@@ -86,7 +89,7 @@ CREATE TABLE IF NOT EXISTS `order_items` (
   PRIMARY KEY (`id`),
   KEY `product_id` (`product_id`),
   KEY `order_id` (`order_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=42 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Sťahujem dáta pre tabuľku `order_items`
@@ -105,8 +108,16 @@ INSERT INTO `order_items` (`id`, `order_id`, `product_id`, `price`, `quantity`) 
 (32, 30, 8, 13.58, 1),
 (33, 31, 4, 7.76, 1),
 (34, 31, 13, 13.58, 1),
+(43, 38, 8, 27.44, 2),
 (39, 36, 10, 11.04, 1),
-(40, 36, 12, 18.4, 2);
+(40, 36, 12, 18.4, 2),
+(42, 38, 4, 62.72, 8),
+(44, 39, 4, 15.68, 2),
+(45, 39, 9, 32.34, 3),
+(46, 39, 7, 11.76, 1),
+(47, 39, 14, 8.82, 1),
+(48, 39, 11, 73.5, 5),
+(49, 40, 8, 164.64, 12);
 
 -- --------------------------------------------------------
 
@@ -164,18 +175,18 @@ CREATE TABLE IF NOT EXISTS `stock` (
 --
 
 INSERT INTO `stock` (`id`, `product_id`, `quantity`) VALUES
-(7, 7, 9),
-(6, 6, 26),
+(7, 7, 8),
+(6, 6, 24),
 (3, 3, 11),
-(4, 4, 17),
+(4, 4, 7),
 (5, 5, 11),
-(8, 8, 21),
-(9, 9, 6),
+(8, 8, 7),
+(9, 9, 3),
 (10, 10, 7),
-(11, 11, 19),
+(11, 11, 14),
 (12, 12, 5),
 (13, 13, 13),
-(15, 14, 13);
+(15, 14, 12);
 
 -- --------------------------------------------------------
 
@@ -194,19 +205,21 @@ CREATE TABLE IF NOT EXISTS `users` (
   `discount` int NOT NULL,
   `notes` text NOT NULL,
   `role` varchar(10) DEFAULT NULL,
+  `stars` int DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=MyISAM AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Sťahujem dáta pre tabuľku `users`
 --
 
-INSERT INTO `users` (`id`, `email`, `passwd`, `name`, `surname`, `address`, `discount`, `notes`, `role`) VALUES
-(26, 'lukas.kras@ukf.sk', '$2a$10$Q07qKEAZJGeS7V9PmohNH.AZVQet2x34TjID2JKRgYRZgM9jluj9W', 'Lukáš', 'Kras', 'Nemocničná 9, 05951 Poprad', 8, '', 'customer'),
-(25, 'veronika.kovacova@ukf.sk', '$2a$10$gnZj3e8RT610oZ00s.Bvv.uXCqLuKmKDsDlo21ldDgGDZl/X/v6ES', 'Veronika', 'Kováčová', 'Hlavná ulica 12, 81109 Bratislava', 5, '', 'customer'),
-(24, 'martin.novak@ukf.sk', '$2a$10$ybCM1OYKIE9whkFP4F58leMloJOF/FMpIOdpAnaskXEUZfyYWu1iu', 'Martin', 'Novák', 'Špitálska 32, 04001 Košice', 0, '', 'admin'),
-(23, 'barbora.tomasova@ukf.sk', '$2a$10$3ICTAYXuWgeMlNcQTmDq.uHr81igiBiqzNR5kecmcu.EYqUsIG5rq', 'Barbora', 'Tomášová', 'Dolná 78, 97401 Banská Bystrica', 2, '', 'customer'),
-(22, 'peter.svec@ukf.sk', '$2a$10$s5mwLfHGYaICGY5sdPYAkOahkHUgMfA4u8oNzezZ9NGAdT5JM9YHe', 'Peter', 'Švec', 'Mierová 234, 94901 Nitra', 0, '', 'admin');
+INSERT INTO `users` (`id`, `email`, `passwd`, `name`, `surname`, `address`, `discount`, `notes`, `role`, `stars`) VALUES
+(26, 'lukas.kras@ukf.sk', '$2a$10$Q07qKEAZJGeS7V9PmohNH.AZVQet2x34TjID2JKRgYRZgM9jluj9W', 'Lukáš', 'Kras', 'Nemocničná 9, 05951 Poprad', 3, '', 'customer', 5),
+(25, 'veronika.kovacova@ukf.sk', '$2a$10$gnZj3e8RT610oZ00s.Bvv.uXCqLuKmKDsDlo21ldDgGDZl/X/v6ES', 'Veronika', 'Kováčová', 'Hlavná ulica 12, 81109 Bratislava', 2, '', 'customer', 15),
+(24, 'martin.novak@ukf.sk', '$2a$10$ybCM1OYKIE9whkFP4F58leMloJOF/FMpIOdpAnaskXEUZfyYWu1iu', 'Martin', 'Novák', 'Špitálska 32, 04001 Košice', 0, '', 'admin', 0),
+(23, 'barbora.tomasova@ukf.sk', '$2a$10$3ICTAYXuWgeMlNcQTmDq.uHr81igiBiqzNR5kecmcu.EYqUsIG5rq', 'Barbora', 'Tomášová', 'Dolná 78, 97401 Banská Bystrica', 2, '', 'customer', 2),
+(22, 'peter.svec@ukf.sk', '$2a$10$s5mwLfHGYaICGY5sdPYAkOahkHUgMfA4u8oNzezZ9NGAdT5JM9YHe', 'Peter', 'Švec', 'Mierová 234, 94901 Nitra', 0, '', 'admin', 0),
+(28, 'andrej.kopan@ukf.sk', '$2a$10$N.3YvUzsdcsHg7.dFb2F2OBAdjWrGTp/wZi4JfVwccmAYM/L/rVBS', 'Andrej', 'Kopaň', 'Janská 21, 93543 Mesto', 2, '', 'customer', 0);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -4,6 +4,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import util.DButil;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -25,7 +26,8 @@ public class basketServlet extends HttpServlet {
 		response.setContentType("text/html;charset=UTF-8");
 		PrintWriter out = response.getWriter();
 		
-		if (!customerAuthServlet.isLoggedin(request)) response.sendRedirect("index.html");
+		if (!customerAuthServlet.isLoggedin(request)) {response.sendRedirect("index.html"); return; }
+		
 		
 		String operation = request.getParameter("operation");
 		if (operation == null) { response.sendRedirect("index.html"); return;}
@@ -33,7 +35,7 @@ public class basketServlet extends HttpServlet {
 		if (operation.equals("logout")) {
 			try {
 				mainServlet.logout(request, response);
-			} catch (IOException e) {
+			} catch (Exception e) {
 		        e.printStackTrace();
 		        out.println("An error occurred during logout.");
 			}
@@ -44,7 +46,7 @@ public class basketServlet extends HttpServlet {
 		if (operation.equals("decreaseQuantity")) { decreaseQuantity(out, request, response); }
 		
 		mainServlet.createHtmlBegining(out, request);
-		mainServlet.createHeader(out, request);
+		mainServlet.createHeader(out, request, response);
 		if (operation.equals("placeOrder")) {
 			if (placeOrder(out, request, response)) {
 				createOrderSuccessfulPage(out, request);
@@ -59,86 +61,109 @@ public class basketServlet extends HttpServlet {
 	}
 	
     private void createMain(PrintWriter out, HttpServletRequest request, HttpServletResponse response) {
-    	double amount = 0;
-    	out.println("<div class=\"bg-dark py-3 mx-5 mt-5 mb-2\" style=\"	background-image: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.8));	background-position: top left;	background-size: 100%;	background-repeat: repeat;\">\r\n"
-				+ "    <div class=\"container\">\r\n"
-				+ "      <div class=\"row\">\r\n"
-				+ "        <div class=\"col-md-12\">\r\n"
-				+ "          <h1 class=\"text-center\" style=\"	text-shadow: 0px 0px 4px white;\">Basket</h1>\r\n"
-				+ "        </div>\r\n"
-				+ "      </div>\r\n");
-				try {
-					String sql = "SELECT products.id AS product_id, products.book_name AS book_name, products.author_name AS author_name, products.picture_name AS picture_name, \r\n"
-				    		+ "basket.price AS price, basket.quantity AS quantity\r\n"
-				    		+ "FROM `basket`\r\n"
-				    		+ "INNER JOIN products ON (basket.product_id=products.id)\r\n"
-				    		+ "WHERE customer_id = ?";
-					int customer_id = mainServlet.getUserID(request, response);
-					
-					try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql);) {
-						stmt.setInt(1, customer_id);
-						try (ResultSet rs = stmt.executeQuery()) {
-							while (rs.next()) {
-						    	out.println("<div class=\"row mb-3\">\r\n"
-						    			+ "        <div class=\"col-md-3\">\r\n"
-						    			+ "          <p class=\"text-center\"><b>"+rs.getString("book_name")+" - "+rs.getString("author_name")+"</b></p><img class=\"img-fluid d-block mx-auto\" src=\"images/books/"+rs.getString("picture_name")+"\" height=\"120\" width=\"70\">\r\n"
-						    			+ "        </div>\r\n"
-						    			+ "        <div class=\"col-md-3 text-center\">\r\n"
-						    			+ "          <p class=\"text-center\">Item price: "+rs.getDouble("price")/rs.getInt("quantity")+"€</p>\r\n"
-						    			+ "        </div>\r\n"
-						    			+ "        <div class=\"col-md-3 text-center\">\r\n"
-						    			+ "          <p class=\"text-center\">Price: "+rs.getDouble("price")+"€</p>\r\n"
-						    			+ "        </div>\r\n"
-						    			+ "        <div class=\"col-md-3\" >\r\n"
-						    			+ "          <div class=\"d-flex align-items-center justify-content-center\">\r\n"
-						    			+ "            <form action=\"basketServlet\" method=\"post\" class=\"text-center\">\r\n"
-						    			+ "              <input type=\"hidden\" name=\"operation\" value=\"decreaseQuantity\">\r\n"
-						    			+ "              <input type=\"hidden\" name=\"product_id\" value=\""+rs.getInt("product_id")+"\">\r\n"
-						    			+ "              <input type=\"hidden\" name=\"quantity\" value=\""+rs.getInt("quantity")+"\">"
-						    			+ "              <button type=\"submit\" class=\"btn btn-link text-dark p-0\"><i class=\"fa fa-minus-square-o text-body\"></i></button>\r\n"
-						    			+ "            </form>\r\n"
-						    			+ "            <p class=\"text-center mx-2 mt-2\">Quantity: "+rs.getInt("quantity")+"</p>\r\n"
-						    			+ "            <form action=\"basketServlet\" method=\"post\" class=\"text-center\">\r\n"
-						    			+ "              <input type=\"hidden\" name=\"operation\" value=\"increaseQuantity\">\r\n"
-						    			+ "              <input type=\"hidden\" name=\"product_id\" value=\""+rs.getInt("product_id")+"\">\r\n"
-						    			+ "              <button type=\"submit\" class=\"btn btn-link text-dark p-0\"><i class=\"fa fa-plus-square-o text-body\" ></i></button>\r\n"
-						    			+ "            </form>\r\n"
-						    			+ "          </div>\r\n"
-						    			+ "          <form action=\"basketServlet\" method=\"post\" class=\"text-center\">\r\n"
-						    			+ "            <input type=\"hidden\" name=\"operation\" value=\"removeItem\">\r\n"
-						    			+ "            <input type=\"hidden\" name=\"product_id\" value=\""+rs.getInt("product_id")+"\">\r\n"
-						    			+ "            <input type=\"submit\" class=\"btn btn-sm text-danger btn-dark\" value=\"Remove item\">\r\n"
-						    			+ "          </form>\r\n"
-						    			+ "        </div>"
-						    			+ "      </div>");	
-						    	amount = Math.round((amount + rs.getDouble("price")) * 100.0) / 100.0;
-						    }
-						}
-					}
-					
-				    out.println("<div class=\"row d-flex justify-content-end m-3\">\r\n"
-							+ "      <p class=\"text-primary\">Amount: "+amount+"€</p>\r\n"
-							+ "    </div>\r\n"
-							+ "  </div>");
-				} catch (Exception e) {
-					e.printStackTrace();
-			        out.println("An error occurred displaying basket content.");
-				}
-				
-		out.println("</div>"
-				+ "</div>");
-		out.println("    <div class=\"container\">\r\n"
-				+ "<div class=\"row\">\r\n"
-				+ "      <div class=\"col-md-6 text-center\\ text-left\" ><a class=\"btn btn-outline-light\" href=\"mainServlet?operation=1\">Back</a></div>\r\n"
-				+ "      <div class=\"col-md-6 text-center\">\r\n"
-				+ "        <form action=\"basketServlet?operation=placeOrder\" method=\"post\" class=\"text-right\"> "
-				+ "         <input type=\"hidden\" name=\"operation\" value=\"placeOrder\"> "
-				+ "         <input type=\"hidden\" name=\"amount\" value=\""+amount+"\"> "
-				+ "         <input type=\"submit\" value=\"Place an order\" class=\"btn btn-outline-primary\"> "
-				+ "        </form>\r\n"
-				+ "      </div>\r\n"
-				+ "    </div>\r\n"
-				+ "    </div>\r\n");
+    	try {
+    		HttpSession session = request.getSession(false); 
+        	double amount = 0;
+        	int stars = 0;
+        	double discount = (Integer) session.getAttribute("discount");
+        	
+        	out.println("<div class=\"bg-dark py-3 mx-5 mt-5 mb-2\" style=\"	background-image: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.8));	background-position: top left;	background-size: 100%;	background-repeat: repeat;\">\r\n"
+    				+ "    <div class=\"container\">\r\n"
+    				+ "      <div class=\"row\">\r\n"
+    				+ "        <div class=\"col-md-12\">\r\n"
+    				+ "          <h1 class=\"text-center\" style=\"	text-shadow: 0px 0px 4px white;\">Basket</h1>\r\n"
+    				+ "        </div>\r\n"
+    				+ "      </div>\r\n");
+    				try {
+    					String sql = "SELECT products.id AS product_id, products.book_name AS book_name, products.author_name AS author_name, products.picture_name AS picture_name, \r\n"
+    				    		+ "products.price AS item_price, basket.price AS price, basket.quantity AS quantity\r\n"
+    				    		+ "FROM `basket`\r\n"
+    				    		+ "INNER JOIN products ON (basket.product_id=products.id)\r\n"
+    				    		+ "WHERE customer_id = ?";
+    					int customer_id = mainServlet.getUserID(request, response);
+    					
+    					try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql);) {
+    						stmt.setInt(1, customer_id);
+    						try (ResultSet rs = stmt.executeQuery()) {
+    							while (rs.next()) {
+    								double price = rs.getDouble("item_price")*(100-discount)/100;
+    						    	double roundedPrice = Math.round(price * 100.0) / 100.0;
+    						    	
+    						    	out.println("<div class=\"row mb-3\">\r\n"
+    						    			+ "        <div class=\"col-md-3\">\r\n"
+    						    			+ "          <p class=\"text-center\"><b>"+rs.getString("book_name")+" - "+rs.getString("author_name")+"</b></p><img class=\"img-fluid d-block mx-auto\" src=\"images/books/"+rs.getString("picture_name")+"\" height=\"120\" width=\"70\">\r\n"
+    						    			+ "        </div>\r\n"
+    						    			+ "        <div class=\"col-md-3 text-center\">\r\n"
+    						    			+ "          <p class=\"text-center\">Item price: "+roundedPrice+"€</p>\r\n"
+    						    			+ "        </div>\r\n"
+    						    			+ "        <div class=\"col-md-3 text-center\">\r\n"
+    						    			+ "          <p class=\"text-center\">Price: "+rs.getDouble("price")+"€</p>\r\n"
+    						    			+ "        </div>\r\n"
+    						    			+ "        <div class=\"col-md-3\" >\r\n"
+    						    			+ "          <div class=\"d-flex align-items-center justify-content-center\">\r\n"
+    						    			+ "            <form action=\"basketServlet\" method=\"post\" class=\"text-center\">\r\n"
+    						    			+ "              <input type=\"hidden\" name=\"operation\" value=\"decreaseQuantity\">\r\n"
+    						    			+ "              <input type=\"hidden\" name=\"product_id\" value=\""+rs.getInt("product_id")+"\">\r\n"
+    						    			+ "              <input type=\"hidden\" name=\"quantity\" value=\""+rs.getInt("quantity")+"\">"
+    						    			+ "              <button type=\"submit\" class=\"btn btn-link text-dark p-0\"><i class=\"fa fa-minus-square-o text-body\"></i></button>\r\n"
+    						    			+ "            </form>\r\n"
+    						    			+ "            <p class=\"text-center mx-2 mt-2\">Quantity: "+rs.getInt("quantity")+"</p>\r\n"
+    						    			+ "            <form action=\"basketServlet\" method=\"post\" class=\"text-center\">\r\n"
+    						    			+ "              <input type=\"hidden\" name=\"operation\" value=\"increaseQuantity\">\r\n"
+    						    			+ "              <input type=\"hidden\" name=\"product_id\" value=\""+rs.getInt("product_id")+"\">\r\n"
+    						    			+ "              <button type=\"submit\" class=\"btn btn-link text-dark p-0\"><i class=\"fa fa-plus-square-o text-body\" ></i></button>\r\n"
+    						    			+ "            </form>\r\n"
+    						    			+ "          </div>\r\n"
+    						    			+ "          <form action=\"basketServlet\" method=\"post\" class=\"text-center\">\r\n"
+    						    			+ "            <input type=\"hidden\" name=\"operation\" value=\"removeItem\">\r\n"
+    						    			+ "            <input type=\"hidden\" name=\"product_id\" value=\""+rs.getInt("product_id")+"\">\r\n"
+    						    			+ "            <input type=\"submit\" class=\"btn btn-sm text-danger btn-dark\" value=\"Remove item\">\r\n"
+    						    			+ "          </form>\r\n"
+    						    			+ "        </div>"
+    						    			+ "      </div>");	
+    						    	amount = Math.round((amount + rs.getDouble("price")) * 100.0) / 100.0;
+    						    	if (discount != 50) {
+    						    		stars = (int) Math.round(amount/5);
+    						    	}
+    						    }
+    						}
+    					}
+    					
+    				    out.println("<div class=\"row d-flex justify-content-end m-3\">\r\n"
+    				    		+ "   <div class=\"d-flex flex-column\">"
+    							+ "      <p class=\"text-primary\">Amount: "+amount+"€</p>\r\n");
+    				    
+    				    if (discount != 50) {
+    				    	out.println("      <p class=\"text-primary\">You get: <span class=\"text-primary\"> "+stars+"<i class=\"fa fa-fw fa-star\"></i></span></p>\r\n");
+    				    }
+    					
+    					out.println("   </div>"
+    							+ "    </div>\r\n"
+    							+ "  </div>");
+    				} catch (Exception e) {
+    					e.printStackTrace();
+    			        out.println("An error occurred displaying basket content.");
+    				}
+    				
+    		out.println("</div>"
+    				+ "</div>");
+    		out.println("    <div class=\"container\">\r\n"
+    				+ "<div class=\"row\">\r\n"
+    				+ "      <div class=\"col-md-6 text-center\\ text-left\" ><a class=\"btn btn-outline-light\" href=\"mainServlet?operation=1\">Back</a></div>\r\n"
+    				+ "      <div class=\"col-md-6 text-center\">\r\n"
+    				+ "        <form action=\"basketServlet?operation=placeOrder\" method=\"post\" class=\"text-right\"> "
+    				+ "         <input type=\"hidden\" name=\"operation\" value=\"placeOrder\"> "
+    				+ "         <input type=\"hidden\" name=\"amount\" value=\""+amount+"\"> "
+    				+ "         <input type=\"hidden\" name=\"stars\" value=\""+stars+"\"> "
+    				+ "         <input type=\"submit\" value=\"Place an order\" class=\"btn btn-outline-primary\"> "
+    				+ "        </form>\r\n"
+    				+ "      </div>\r\n"
+    				+ "    </div>\r\n"
+    				+ "    </div>\r\n");
+    	} catch (NullPointerException e) {
+    		out.print("Session epired.");
+			e.printStackTrace();
+    	}
 	}
     
     private void createOrderSuccessfulPage(PrintWriter out, HttpServletRequest request) {
@@ -227,12 +252,14 @@ public class basketServlet extends HttpServlet {
     	try {
     		int customer_id = mainServlet.getUserID(request, response);
         	double amount = Double.parseDouble(request.getParameter("amount"));
+        	Integer stars = Integer.parseInt(request.getParameter("stars"));
         	
         	// if items are in stock and basket is not empty
         	if (inStock(out, request, customer_id) && amount > 0) {
         		int order_number = getOrderNumber(out, request);
         	    insertOrder(out, request, customer_id, order_number, amount); // write to orders table
         	    insertOrderItems(out, request, customer_id); // write to order_items table
+        	    insertStars(out, request, customer_id, stars);
         	    return true;
         	} else { // if not enough items in stock
         		updateUnavaibleItems(out, request, customer_id);
@@ -366,6 +393,36 @@ public class basketServlet extends HttpServlet {
     			stmt.setInt(4, basket_quantity);
     			stmt.executeUpdate();
     		}
+    	} catch (Exception e) {
+    		e.printStackTrace();
+	        out.println("An error occured.");
+    	}
+    }
+    
+    private void insertStars(PrintWriter out, HttpServletRequest request, int customer_id, Integer stars) {
+    	try {
+    		HttpSession session = request.getSession(false); 
+        	Integer current_stars = (Integer)session.getAttribute("stars");
+        	Integer discount = (Integer)session.getAttribute("discount");
+        	
+        	if (discount != 50) {
+        		if ((current_stars + stars) > 100){
+            		stars = (current_stars + stars) - 100;
+            		discount+=1;
+            	} else {
+            		stars+= current_stars;
+            	}
+        		session.setAttribute("stars", stars);
+        		session.setAttribute("discount", discount);
+        		
+        		String sql = "UPDATE users SET discount = ?, stars = ? WHERE id = ?";
+        		try (PreparedStatement stmt = DButil.getConnection(request).prepareStatement(sql)) {
+        			stmt.setInt(1, discount);
+        			stmt.setInt(2, stars);
+        			stmt.setInt(3, customer_id);
+        			stmt.executeUpdate();
+        		}
+        	}
     	} catch (Exception e) {
     		e.printStackTrace();
 	        out.println("An error occured.");

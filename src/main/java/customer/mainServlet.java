@@ -27,7 +27,7 @@ public class mainServlet extends HttpServlet {
 		response.setContentType("text/html;charset=UTF-8");
 		PrintWriter out = response.getWriter();
 		
-		if (!customerAuthServlet.isLoggedin(request)) response.sendRedirect("index.html");
+		if (!customerAuthServlet.isLoggedin(request)) {response.sendRedirect("index.html"); return; }
 
 		String operation = request.getParameter("operation");
 		if (operation == null) { response.sendRedirect("index.html"); return;}
@@ -35,7 +35,7 @@ public class mainServlet extends HttpServlet {
 		if (operation.equals("logout")) {
 			try {
 				logout(request, response);
-			} catch (IOException e) {
+			} catch (Exception e) {
 		        e.printStackTrace();
 		        out.println("An error occurred during logout.");
 			}
@@ -43,7 +43,7 @@ public class mainServlet extends HttpServlet {
 		}
 		
 		createHtmlBegining(out, request);
-	    createHeader(out, request);
+	    createHeader(out, request, response);
 	    if (operation.equals("showBook")) { showBook(out, request); }
 	    else {
 	    	if (operation.equals("buy")) { 
@@ -78,32 +78,60 @@ public class mainServlet extends HttpServlet {
 				+ "</html>");
 	}
 	
-	public static void createHeader(PrintWriter out, HttpServletRequest request) {
-		HttpSession ses = request.getSession();
-		String displayedName = (String)ses.getAttribute("name") + " " + (String)ses.getAttribute("surname");
+	public static void createHeader(PrintWriter out, HttpServletRequest request, HttpServletResponse response) {
+		try {
+			HttpSession ses = request.getSession(false);
+			String displayedName = (String)ses.getAttribute("name") + " " + (String)ses.getAttribute("surname");
+			Integer discount = (Integer)ses.getAttribute("discount");
+			Integer stars =  (Integer)ses.getAttribute("stars");
+			
+			out.println("<nav class=\"navbar navbar-expand-md navbar-dark bg-dark fixed-top p-1\" style=\"background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.8));\">\r\n"
+					+ "    <div class=\"container\"> <button class=\"navbar-toggler navbar-toggler-right border-0\" type=\"button\" data-toggle=\"collapse\" data-target=\"#navbar13\">\r\n"
+					+ "        <span class=\"navbar-toggler-icon\"></span>\r\n"
+					+ "      </button>\r\n"
+					+ "      <div class=\"collapse navbar-collapse\" id=\"navbar13\"> <a class=\"navbar-brand d-none d-md-block\" href=\"mainServlet?operation=1\">\r\n"
+					+ "          <i class=\"fa d-inline fa-lg fa-superpowers\"></i>\r\n"
+					+ "          <b> IMAGINARIUM</b>\r\n"
+					+ "        </a>\r\n"
+					+ "        <ul class=\"navbar-nav mx-auto\">\r\n");
+			
+			if (discount < 50) {
+				out.println("          <li class=\"nav-item\"> <a class=\"nav-link text-white\" href=\"#\">Discount for "+displayedName+":</a> </li>\r\n"
+					    + "          <li class=\"nav-item\"> \r\n"
+				        + "              <div class=\"d-flex\">\r\n"
+				        + "                  <a class=\"nav-link text-white\"><i class=\"fa fa-fw fa-circle text-danger\"></i>-"+discount+"%</a>\r\n"
+				        + "                  <a class=\"nav-link text-white\">"+stars+"/100 <i class=\"fa fa-fw fa-star text-warning\"></i></a>\r\n"
+				        + "                  <a class=\"nav-link text-white\"><i class=\"fa fa-fw fa-arrow-up text-success\"></i>-"+(discount+1)+"%</a> \r\n"
+				        + "              </div>\r\n"
+				        + "          </li>\r\n");
+			} else {
+				out.println("          <li class=\"nav-item\"> <a class=\"nav-link text-white\" href=\"#\">Discount for "+displayedName+":</a> </li>\r\n"
+					    + "          <li class=\"nav-item\"> \r\n"
+				        + "              <div class=\"d-flex\">\r\n"
+				        + "                  <a class=\"nav-link text-white\"><i class=\"fa fa-fw fa-circle text-danger\"></i>-"+discount+"%</a>\r\n"
+				        + "              </div>\r\n"
+				        + "          </li>\r\n");
+			}
+					
+					out.println( "        </ul>\r\n"
+					+ "        <ul class=\"navbar-nav\">\r\n"
+					+ "          <li class=\"nav-item\"> <a class=\"nav-link\" href=\"ordersServlet?operation=1\">\r\n"
+					+ "              <i class=\"fa fa-fw fa-shopping-bag\"></i>Orders </a> </li>\r\n"
+					+ "          <li class=\"nav-item\"> <a class=\"nav-link\" href=\"basketServlet?operation=1\">\r\n"
+					+ "              <i class=\"fa fa-fw fa-shopping-cart\"></i>Basket </a> </li>\r\n"
+					+ "          <li class=\"nav-item\"> <a class=\"nav-link\" href=\"mainServlet?operation=logout\">\r\n"
+					+ "              <i class=\"fa fa-fw fa-sign-out\"></i>Log out </a> </li>\r\n"
+					+ "        </ul>\r\n"
+					+ "      </div>\r\n"
+					+ "    </div>\r\n"
+					+ "    <div><ul>"
+					+ "    </ul></div>"
+					+ "  </nav>");
+		} catch (NullPointerException e) {
+			out.print("Session epired.");
+			e.printStackTrace();
+		}
 		
-		out.println("<nav class=\"navbar navbar-expand-md navbar-dark bg-dark fixed-top p-1\" style=\"background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.8));\">\r\n"
-				+ "    <div class=\"container\"> <button class=\"navbar-toggler navbar-toggler-right border-0\" type=\"button\" data-toggle=\"collapse\" data-target=\"#navbar13\">\r\n"
-				+ "        <span class=\"navbar-toggler-icon\"></span>\r\n"
-				+ "      </button>\r\n"
-				+ "      <div class=\"collapse navbar-collapse\" id=\"navbar13\"> <a class=\"navbar-brand d-none d-md-block\" href=\"mainServlet?operation=1\">\r\n"
-				+ "          <i class=\"fa d-inline fa-lg fa-superpowers\"></i>\r\n"
-				+ "          <b> IMAGINARIUM</b>\r\n"
-				+ "        </a>\r\n"
-				+ "        <ul class=\"navbar-nav mx-auto\">\r\n"
-				+ "          <li class=\"nav-item\"> <a class=\"nav-link\" href=\"#\">Welcome, "+displayedName+"</a> </li>\r\n"
-				+ "        </ul>\r\n"
-				+ "        <ul class=\"navbar-nav\">\r\n"
-				+ "          <li class=\"nav-item\"> <a class=\"nav-link\" href=\"ordersServlet?operation=1\">\r\n"
-				+ "              <i class=\"fa fa-fw fa-shopping-bag\"></i>Orders </a> </li>\r\n"
-				+ "          <li class=\"nav-item\"> <a class=\"nav-link\" href=\"basketServlet?operation=1\">\r\n"
-				+ "              <i class=\"fa fa-fw fa-shopping-cart\"></i>Basket </a> </li>\r\n"
-				+ "          <li class=\"nav-item\"> <a class=\"nav-link\" href=\"mainServlet?operation=logout\">\r\n"
-				+ "              <i class=\"fa fa-fw fa-sign-out\"></i>Log out </a> </li>\r\n"
-				+ "        </ul>\r\n"
-				+ "      </div>\r\n"
-				+ "    </div>\r\n"
-				+ "  </nav>");
 	}
 	
 	public static void createFooter(PrintWriter out, HttpServletRequest request) {

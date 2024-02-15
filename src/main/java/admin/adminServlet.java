@@ -26,7 +26,7 @@ public class adminServlet extends HttpServlet {
 		response.setContentType("text/html;charset=UTF-8");
 		PrintWriter out = response.getWriter();
 
-		if (!adminAuthServlet.isLoggedin(request)) response.sendRedirect("admin.html");
+		if (!adminAuthServlet.isLoggedin(request)) {response.sendRedirect("index.html"); return; }
 
 		String operation = request.getParameter("operation");
 		if (operation == null) { response.sendRedirect("admin.html"); return;}
@@ -34,7 +34,7 @@ public class adminServlet extends HttpServlet {
 		if (operation.equals("logout")) {
 			try {
 				logout(request, response);
-			} catch (IOException e) {
+			} catch (Exception e) {
 		        e.printStackTrace();
 		        out.println("An error occurred during logout.");
 			}

@@ -84,7 +84,7 @@ public class registrationServlet extends HttpServlet {
 
 	    try {
 	        String checkEmailQuery = "SELECT COUNT(ID) AS pocet FROM users WHERE email=?";
-	        String insertUserQuery = "INSERT INTO users (email, passwd, name, surname, address, discount, notes, role) VALUES (?, ?, ?, ?, ?, '0', '', 'customer')";
+	        String insertUserQuery = "INSERT INTO users (email, passwd, name, surname, address, discount, notes, role, stars) VALUES (?, ?, ?, ?, ?, '2', '', 'customer', 0)";
 
 	        try (PreparedStatement checkEmailStatement = DButil.getConnection(request).prepareStatement(checkEmailQuery)) {
 	            checkEmailStatement.setString(1, email);

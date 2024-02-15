@@ -24,7 +24,7 @@ public class ordersServlet extends mainServlet {
 		response.setContentType("text/html;charset=UTF-8");
 		PrintWriter out = response.getWriter();
 
-		if (!customerAuthServlet.isLoggedin(request)) response.sendRedirect("index.html");
+		if (!customerAuthServlet.isLoggedin(request)) {response.sendRedirect("index.html"); return; }
 		
 		String operation = request.getParameter("operation");
 		if (operation == null) { response.sendRedirect("index.html"); return;}
@@ -32,7 +32,7 @@ public class ordersServlet extends mainServlet {
 		if (operation.equals("logout")) {
 			try {
 				mainServlet.logout(request, response);
-			} catch (IOException e) {
+			} catch (Exception e) {
 		        e.printStackTrace();
 		        out.println("An error occurred during logout.");
 			}
@@ -40,7 +40,7 @@ public class ordersServlet extends mainServlet {
 		}
 		
 		mainServlet.createHtmlBegining(out, request);
-		mainServlet.createHeader(out, request);
+		mainServlet.createHeader(out, request, response);
 		if (operation.equals("showOrder")) { showOrder(out, request); }
 		else { createMain(out, request, response); }
 	    mainServlet.createFooter(out, request);

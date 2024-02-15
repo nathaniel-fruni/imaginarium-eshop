@@ -57,7 +57,7 @@ public class customerAuthServlet extends HttpServlet {
 	        String email = request.getParameter("email");
 	        String inputPassword = request.getParameter("pwd");
 
-	        String sql = "SELECT id, email, passwd, name, surname, address, discount, notes, role FROM users WHERE email = ?";
+	        String sql = "SELECT id, email, passwd, name, surname, address, discount, notes, role, stars FROM users WHERE email = ?";
 	        try (PreparedStatement preparedStatement = DButil.getConnection(request).prepareStatement(sql)) {
 	            preparedStatement.setString(1, email);
 
@@ -93,7 +93,7 @@ public class customerAuthServlet extends HttpServlet {
         session.setAttribute("discount", resultSet.getInt("discount"));
         session.setAttribute("notes", resultSet.getString("notes"));
         session.setAttribute("role", resultSet.getString("role"));
-    }
+        session.setAttribute("stars", resultSet.getInt("stars"));   }
 	
 	public static boolean isLoggedin(HttpServletRequest request) {
 		HttpSession session = request.getSession();
