@@ -40,7 +40,7 @@ public class registrationServlet extends HttpServlet {
 				+ "    <link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css\" type=\"text/css\">\r\n"
 				+ "    <link rel=\"stylesheet\" href=\"styles/style.css\">\r\n"
 				+ "</head>\r\n"
-				+ "<body style=\"background-image: linear-gradient(to left bottom, rgba(189, 195, 199, .75), rgba(44, 62, 80, .75)); background-size: 100%;\">\r\n"
+				+ "<body class=\"bg-dark\" style=\"background-image: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.8)); text-shadow: 0px 0px 4px white;\">\r\n"
 				+ "  <div class=\"py-3 text-center\">\r\n"
 				+ "    <div class=\"container-fluid\">\r\n"
 				+ "      <div class=\"row\">\r\n"
